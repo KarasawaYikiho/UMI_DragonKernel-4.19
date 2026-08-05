@@ -12,7 +12,7 @@
 
 ## 状态
 
-五台设备的 Original、KernelSU 及 KernelSU + SUSFS 产物已通过 GitHub Actions 矩阵构建。`umi` SukiSU + KPM + SUSFS 已通过 WSL 全量构建。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、Root 隐藏、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+五台设备的 Original、KernelSU、KernelSU + SUSFS 及 SukiSU + KPM + SUSFS 产物已通过 GitHub Actions 矩阵构建。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、Root 隐藏、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
 
 ## 构建边界
 
