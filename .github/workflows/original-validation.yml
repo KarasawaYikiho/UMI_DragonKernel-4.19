@@ -16,10 +16,11 @@ jobs:
       fail-fast: false
       matrix:
         device: [umi, cmi, cas, thyme, apollo]
-    env:
-      OUT_ROOT: ${{ runner.temp }}/dragonkernel-out
     steps:
       - uses: actions/checkout@v7
+
+      - name: Set output directory
+        run: echo "OUT_ROOT=$RUNNER_TEMP/dragonkernel-out" >> "$GITHUB_ENV"
 
       - name: Install build dependencies
         run: bash scripts/dragonkernel/bootstrap_wsl.sh
