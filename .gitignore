@@ -22,6 +22,7 @@
 *.gcno
 *.gz
 *.i
+*.img
 *.ko
 *.lex.c
 *.ll
@@ -34,6 +35,7 @@
 *.o.*
 *.order
 *.patch
+*.py[cod]
 *.s
 *.so
 *.so.dbg
@@ -42,7 +44,9 @@
 *.tab.[ch]
 *.tar
 *.xz
+*.zip
 Module.symvers
+__pycache__/
 modules.builtin
 
 #
@@ -73,6 +77,11 @@ modules.builtin
 #
 /snap/
 
+# DragonKernel private inputs and local release outputs
+/.dragonkernel-private/
+/artifacts/
+/private/
+
 #
 # tar directory (make tar*-pkg)
 #
@@ -85,6 +94,8 @@ modules.builtin
 !.mailmap
 !.cocciconfig
 !.clang-format
+!.github/
+!.github/**
 
 #
 # Generated include files

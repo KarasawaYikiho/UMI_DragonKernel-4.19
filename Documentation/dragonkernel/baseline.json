@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "device_family": {
+    "soc": "sm8250",
+    "os_target": "HyperOS 3 China",
+    "android": 15,
+    "devices": [
+      {
+        "codename": "umi",
+        "config": "arch/arm64/configs/vendor/xiaomi/umi.config"
+      },
+      {
+        "codename": "cmi",
+        "config": "arch/arm64/configs/vendor/xiaomi/cmi.config"
+      },
+      {
+        "codename": "cas",
+        "config": "arch/arm64/configs/vendor/xiaomi/cas.config"
+      },
+      {
+        "codename": "thyme",
+        "config": "arch/arm64/configs/vendor/xiaomi/thyme.config"
+      },
+      {
+        "codename": "apollo",
+        "config": "arch/arm64/configs/vendor/xiaomi/apollo.config"
+      }
+    ]
+  },
+  "kernel": {
+    "version": "4.19.325",
+    "config_fragments": [
+      "arch/arm64/configs/vendor/kona-perf_defconfig",
+      "arch/arm64/configs/vendor/debugfs.config",
+      "arch/arm64/configs/vendor/xiaomi/sm8250-common.config"
+    ]
+  },
+  "toolchain": {
+    "name": "clang-r416183b",
+    "url": "https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git",
+    "ref": "lineage-20.0",
+    "commit": "54220fd601050b350b2af7adc913089ebf0e7aed"
+  },
+  "upstreams": {
+    "lineage": {
+      "url": "https://github.com/LineageOS/android_kernel_xiaomi_sm8250.git",
+      "ref": "lineage-23.2",
+      "commit": "71b13e62f057a649b77fe4062feb73ee72ad609c"
+    },
+    "xiaomi_umi": {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git",
+      "ref": "umi-q-oss",
+      "commit": "db67ca6001320efc1f945c270635434fc403a9d4"
+    },
+    "xiaomi_sm8250_r": {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git",
+      "ref": "cmi-r-oss",
+      "commit": "64b40409431988d060f7484369c8c2d7deca1bb3"
+    },
+    "xiaomi_cas_q": {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git",
+      "ref": "cas-q-oss",
+      "commit": "b286e90108628643abec72c90deefbd1c17c4f94"
+    },
+    "xiaomi_thyme_r": {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git",
+      "ref": "alioth-r-oss",
+      "commit": "2fdca387269615872d4ff798e8da7d33345c1338"
+    },
+    "xiaomi_apollo_q": {
+      "url": "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git",
+      "ref": "apollo-q-oss",
+      "commit": "acee5ab681485b77ba8d06ef4b0e39c8af974204"
+    }
+  },
+  "release_variants": [
+    "original",
+    "magisk",
+    "kernelsu",
+    "sukisu-kpm-susfs"
+  ],
+  "common_security": {
+    "bbg": "required-after-validation"
+  },
+  "required_device_inputs": {
+    "private_rom": null,
+    "getprop_dump": null,
+    "proc_config_gz": null,
+    "bootloader_recovery_path": null
+  }
+}

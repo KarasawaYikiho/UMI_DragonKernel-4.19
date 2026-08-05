@@ -1,0 +1,24 @@
+name: Project contract
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            .github
+            Documentation/dragonkernel
+            scripts/dragonkernel
+            Makefile
+            arch/arm64/configs/vendor
+          sparse-checkout-cone-mode: false
+      - run: python3 scripts/dragonkernel/verify_baseline.py
