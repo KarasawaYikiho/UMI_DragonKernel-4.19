@@ -1,4 +1,4 @@
-# Original 构建记录
+# 构建记录
 
 本记录只证明构建链可生成五设备内核，不代表已经启动、兼容或可刷写。本机产物不得用于 Releases。
 
@@ -19,7 +19,7 @@
 | `thyme` | 55,566,352 | `3d96f322c84a381c09011bbd8d160315d8e205f136f2b6adc37ca4270e3f8ba7` | 3 | 12 | 3 |
 | `apollo` | 53,471,248 | `ca3152cb436fb21787fa472d206cec6c5b48166f6d4b2add536d6c6e17a6e2c8` | 3 | 12 | 3 |
 
-提交 `559f31fa3c2f2e8af0d0a18304e0e5a5336ef594` 已通过五设备 GitHub Actions 干净重建，并生成五份短期验证 Artifact。
+提交 `ce0897b86aa38138761211dde7f91f4325d18005` 的 Original 与 KernelSU 已分别通过五设备 GitHub Actions 干净重建，共生成十份短期验证 Artifact。
 
 本地 boot 重打包已验证模板无修改往返、内核替换回读、分区尺寸限制和 AVB 摘要。该结果只证明镜像结构有效，不证明设备可启动。
 
@@ -31,7 +31,13 @@
 - 产物：3 个 DTB、12 个 DTBO、3 个模块
 - 校验：`CONFIG_KSU=y`、`CONFIG_KPROBES=y`、`kernelsu_init` 存在，`SHA256SUMS` 全部通过
 
-该结果只证明 KernelSU 已集成并构建；不证明已启动、Root 可用或隐藏通过。
+提交 `b589528db7839f786a6fa6e574f0463cc87ba1e5` 进一步在全新工作树应用锁定 SUSFS 补丁并完成 `umi` 全量构建：
+
+- Image SHA-256：`4747ec395b1418609dfe67fa277cb837df23472a4506c7fafc60f4643adcae1f`
+- 产物：3 个 DTB、12 个 DTBO、3 个模块
+- 校验：`CONFIG_KSU_SUSFS=y`、隐藏符号启用、SUSFS 日志关闭、`susfs_init` 存在，`SHA256SUMS` 全部通过
+
+该结果只证明 KernelSU + SUSFS 已集成并构建；不证明已启动、Root 可用或隐藏通过。
 
 ## 未完成
 

@@ -12,7 +12,7 @@
 
 ## 状态
 
-五台设备的 Original `Image`、DTB、DTBO 和模块已在 WSL 与 GitHub Actions 中构建成功；`umi` KernelSU 变体已通过本地干净构建。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+五台设备的 Original 与 KernelSU 产物已通过 GitHub Actions 矩阵构建；`umi` KernelSU + SUSFS 已通过 WSL 干净树构建。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
 
 ## 构建边界
 
