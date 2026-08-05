@@ -1,0 +1,433 @@
+diff --git a/kernel/Kbuild b/kernel/Kbuild
+index 4f258014..85556f8e 100644
+--- a/kernel/Kbuild
++++ b/kernel/Kbuild
+@@ -3,6 +3,7 @@ kernelsu-objs := core/init.o
+ kernelsu-objs += feature/kernel_umount.o
+ kernelsu-objs += feature/sulog.o
+ kernelsu-objs += feature/sucompat.o
++kernelsu-$(CONFIG_KSU_SUSFS) += feature/susfs.o
+ 
+ kernelsu-objs += hook/lsm_hook.o
+ kernelsu-objs += hook/setuid_hook.o
+@@ -138,6 +139,10 @@ else
+ $(info -- KPM is disabled)
+ endif
+ 
++ifeq ($(CONFIG_KSU_SUSFS), y)
++$(info -- SUSFS_VERSION: $(shell sed -n 's/^#define SUSFS_VERSION "\([^"]*\)"/\1/p' $(srctree)/include/linux/susfs.h))
++endif
++
+ KSU_NEW_DCACHE_FLUSH := $(shell grep -q __flush_dcache_area $(srctree)/arch/arm64/include/asm/cacheflush.h ; echo $$?)
+ $(info -- KSU_NEW_DCACHE_FLUSH: $(KSU_NEW_DCACHE_FLUSH))
+ 
+diff --git a/kernel/Kconfig b/kernel/Kconfig
+index ac416c5a..8ccc8563 100644
+--- a/kernel/Kconfig
++++ b/kernel/Kconfig
+@@ -36,6 +36,85 @@ config KPM
+     select KALLSYMS
+     select KALLSYMS_ALL
+ 
++menu "SukiSU - SUSFS"
++
++config KSU_SUSFS
++	bool "Enable SUSFS"
++	depends on KSU
++	default y
++
++config KSU_SUSFS_HAS_MAGIC_MOUNT
++	bool
++	depends on KSU_SUSFS
++	default n
++
++config KSU_SUSFS_SUS_PATH
++	bool "Hide suspicious paths"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_SUS_MOUNT
++	bool "Hide suspicious mounts"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
++	bool "Auto-hide SukiSU mounts"
++	depends on KSU_SUSFS_SUS_MOUNT
++	default y
++
++config KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
++	bool "Auto-hide bind mounts"
++	depends on KSU_SUSFS_SUS_MOUNT
++	default y
++
++config KSU_SUSFS_SUS_KSTAT
++	bool "Spoof file attributes"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_SUS_OVERLAYFS
++	bool "Spoof overlayfs attributes"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_TRY_UMOUNT
++	bool "Enable SUSFS unmount list"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
++	bool "Auto-add bind mounts to unmount list"
++	depends on KSU_SUSFS_TRY_UMOUNT
++	default y
++
++config KSU_SUSFS_SPOOF_UNAME
++	bool "Spoof uname"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_ENABLE_LOG
++	bool "Enable SUSFS logging"
++	depends on KSU_SUSFS
++	default n
++
++config KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
++	bool "Hide SukiSU and SUSFS symbols"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
++	bool "Spoof cmdline or bootconfig"
++	depends on KSU_SUSFS
++	default y
++
++config KSU_SUSFS_OPEN_REDIRECT
++	bool "Redirect opened paths"
++	depends on KSU_SUSFS
++	default y
++
++endmenu
++
+ config KSU_DISABLE_MANAGER
+ 	bool "Disable KernelSU manager integration"
+ 	depends on KSU
+diff --git a/kernel/core/init.c b/kernel/core/init.c
+index 05cfd750..1cf80fa9 100644
+--- a/kernel/core/init.c
++++ b/kernel/core/init.c
+@@ -28,6 +28,10 @@
+ #include "feature/uts_spoof.h"
+ #include "infra/symbol_resolver.h"
+ 
++#ifdef CONFIG_KSU_SUSFS
++#include <linux/susfs.h>
++#endif
++
+ #if defined(__x86_64__)
+ #include <asm/cpufeature.h>
+ #include <linux/version.h>
+@@ -134,6 +138,10 @@ int __init kernelsu_init(void)
+ 
+     ksu_init_symbol_resolver();
+ 
++#ifdef CONFIG_KSU_SUSFS
++    susfs_init();
++#endif
++
+     if (spoof_release || spoof_version) {
+         ksu_spoof_version(spoof_release, spoof_version);
+     }
+diff --git a/kernel/feature/kernel_umount.c b/kernel/feature/kernel_umount.c
+index de3a911b..0a35915f 100644
+--- a/kernel/feature/kernel_umount.c
++++ b/kernel/feature/kernel_umount.c
+@@ -21,6 +21,11 @@
+ #include "runtime/ksud_boot.h"
+ #include "ksu.h"
+ 
++#ifdef CONFIG_KSU_SUSFS
++#include <linux/susfs.h>
++#include <linux/susfs_def.h>
++#endif
++
+ static bool ksu_kernel_umount_enabled = true;
+ 
+ static int kernel_umount_feature_get(u64 *value)
+@@ -90,6 +95,15 @@ struct umount_tw {
+ 
+ int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
+ {
++#ifdef CONFIG_KSU_SUSFS
++    if ((is_appuid(new_uid) || is_isolated_process(new_uid)) &&
++        ksu_uid_should_umount(new_uid) && is_zygote(current_cred())) {
++        task_lock(current);
++        current->susfs_task_state |= TASK_STRUCT_NON_ROOT_USER_APP_PROC;
++        task_unlock(current);
++    }
++#endif
++
+     // if there isn't any module mounted, just ignore it!
+     if (!ksu_module_mounted) {
+         return 0;
+@@ -132,6 +146,10 @@ int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
+ 
+     const struct cred *saved = override_creds(ksu_cred);
+ 
++#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
++    susfs_try_umount(new_uid);
++#endif
++
+     struct mount_entry *entry;
+     down_read(&mount_list_lock);
+     list_for_each_entry (entry, &mount_list, list) {
+diff --git a/kernel/feature/susfs.c b/kernel/feature/susfs.c
+new file mode 100644
+index 00000000..b104319c
+--- /dev/null
++++ b/kernel/feature/susfs.c
+@@ -0,0 +1,197 @@
++#include <linux/cred.h>
++#include <linux/fs.h>
++#include <linux/mount.h>
++#include <linux/namei.h>
++#include <linux/nsproxy.h>
++#include <linux/string.h>
++#include <linux/susfs.h>
++#include <linux/susfs_def.h>
++#include <linux/uaccess.h>
++
++#include "feature/susfs.h"
++#include "manager/manager_identity.h"
++#include "policy/allowlist.h"
++#include "selinux/selinux.h"
++
++extern int path_umount(struct path *path, int flags);
++extern struct nsproxy init_nsproxy;
++extern bool susfs_is_mnt_devname_ksu(struct path *path);
++extern void susfs_run_try_umount_for_current_mnt_ns(void);
++
++bool susfs_is_allow_su(void)
++{
++    return is_manager() || ksu_is_allow_uid(current_uid().val);
++}
++
++bool susfs_is_current_ksu_domain(void)
++{
++    return is_ksu_domain();
++}
++
++bool susfs_is_current_zygote_domain(void)
++{
++    return is_zygote(current_cred());
++}
++
++#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
++static bool should_umount(struct path *path)
++{
++    if (!path || !current->nsproxy || current->nsproxy->mnt_ns == init_nsproxy.mnt_ns)
++        return false;
++
++    return susfs_is_mnt_devname_ksu(path);
++}
++
++void ksu_try_umount(const char *mnt, bool check_mnt, int flags, uid_t uid)
++{
++    struct path path;
++    int err;
++
++    (void)uid;
++    err = kern_path(mnt, 0, &path);
++    if (err)
++        return;
++
++    if (path.dentry != path.mnt->mnt_root) {
++        path_put(&path);
++        return;
++    }
++
++    if (check_mnt && !should_umount(&path)) {
++        path_put(&path);
++        return;
++    }
++
++    path_umount(&path, flags);
++}
++
++void susfs_try_umount_all(uid_t uid)
++{
++    susfs_try_umount(uid);
++    ksu_try_umount("/system", true, 0, uid);
++    ksu_try_umount("/system_ext", true, 0, uid);
++    ksu_try_umount("/vendor", true, 0, uid);
++    ksu_try_umount("/product", true, 0, uid);
++    ksu_try_umount("/odm", true, 0, uid);
++    ksu_try_umount("/data/adb/modules", false, MNT_DETACH, uid);
++    ksu_try_umount("/debug_ramdisk", true, MNT_DETACH, uid);
++}
++#endif
++
++static int copy_result(void __user *arg, const void *value, size_t size)
++{
++    return copy_to_user(arg, value, size) ? -EFAULT : 0;
++}
++
++static int show_enabled_features(void __user *arg)
++{
++    static const char features[] =
++#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++        "SUS_PATH\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++        "SUS_MOUNT\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++        "SUS_KSTAT\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
++        "SUS_OVERLAYFS\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
++        "TRY_UMOUNT\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++        "SPOOF_UNAME\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
++        "HIDE_KSU_SUSFS_SYMBOLS\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
++        "SPOOF_CMDLINE_OR_BOOTCONFIG\n"
++#endif
++#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
++        "OPEN_REDIRECT\n"
++#endif
++        "";
++
++    return copy_result(arg, features, sizeof(features));
++}
++
++int ksu_susfs_handle_command(unsigned int cmd, void __user *arg)
++{
++    int error = -EINVAL;
++
++    if (current_uid().val != 0 || !arg)
++        return -EPERM;
++
++    switch (cmd) {
++#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++    case CMD_SUSFS_ADD_SUS_PATH:
++        error = susfs_add_sus_path(arg);
++        break;
++#endif
++#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++    case CMD_SUSFS_ADD_SUS_MOUNT:
++        error = susfs_add_sus_mount(arg);
++        break;
++#endif
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++    case CMD_SUSFS_ADD_SUS_KSTAT:
++    case CMD_SUSFS_ADD_SUS_KSTAT_STATICALLY:
++        error = susfs_add_sus_kstat(arg);
++        break;
++    case CMD_SUSFS_UPDATE_SUS_KSTAT:
++        error = susfs_update_sus_kstat(arg);
++        break;
++#endif
++#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
++    case CMD_SUSFS_ADD_TRY_UMOUNT:
++        error = susfs_add_try_umount(arg);
++        break;
++    case CMD_SUSFS_RUN_UMOUNT_FOR_CURRENT_MNT_NS:
++        susfs_run_try_umount_for_current_mnt_ns();
++        error = 0;
++        break;
++#endif
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++    case CMD_SUSFS_SET_UNAME:
++        error = susfs_set_uname(arg);
++        break;
++#endif
++#ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
++    case CMD_SUSFS_ENABLE_LOG: {
++        unsigned long enabled;
++
++        if (copy_from_user(&enabled, arg, sizeof(enabled)))
++            return -EFAULT;
++        susfs_set_log(enabled != 0);
++        error = 0;
++        break;
++    }
++#endif
++#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
++    case CMD_SUSFS_SET_CMDLINE_OR_BOOTCONFIG:
++        error = susfs_set_cmdline_or_bootconfig(arg);
++        break;
++#endif
++#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
++    case CMD_SUSFS_ADD_OPEN_REDIRECT:
++        error = susfs_add_open_redirect(arg);
++        break;
++#endif
++    case CMD_SUSFS_SHOW_VERSION:
++        error = copy_result(arg, SUSFS_VERSION, sizeof(SUSFS_VERSION));
++        break;
++    case CMD_SUSFS_SHOW_ENABLED_FEATURES:
++        error = show_enabled_features(arg);
++        break;
++    case CMD_SUSFS_SHOW_VARIANT:
++        error = copy_result(arg, SUSFS_VARIANT, sizeof(SUSFS_VARIANT));
++        break;
++    default:
++        break;
++    }
++
++    return error;
++}
+diff --git a/kernel/feature/susfs.h b/kernel/feature/susfs.h
+new file mode 100644
+index 00000000..85a1e8be
+--- /dev/null
++++ b/kernel/feature/susfs.h
+@@ -0,0 +1,9 @@
++#ifndef __KSU_FEATURE_SUSFS_H
++#define __KSU_FEATURE_SUSFS_H
++
++#include <linux/types.h>
++#include <linux/uaccess.h>
++
++int ksu_susfs_handle_command(unsigned int cmd, void __user *arg);
++
++#endif
+diff --git a/kernel/supercall/supercall.c b/kernel/supercall/supercall.c
+index ef87b78c..23a572ab 100644
+--- a/kernel/supercall/supercall.c
++++ b/kernel/supercall/supercall.c
+@@ -17,6 +17,11 @@
+ #include "arch.h"
+ #include "klog.h" // IWYU pragma: keep
+ 
++#ifdef CONFIG_KSU_SUSFS
++#include "feature/susfs.h"
++#define SUSFS_MAGIC 0xFAFAFAFA
++#endif
++
+ struct ksu_install_fd_tw {
+     struct callback_head cb;
+     int __user *outp;
+@@ -87,6 +92,16 @@ static int reboot_handler_pre(struct kprobe *p, struct pt_regs *regs)
+     int magic1 = (int)PT_REGS_PARM1(real_regs);
+     int magic2 = (int)PT_REGS_PARM2(real_regs);
+ 
++#ifdef CONFIG_KSU_SUSFS
++    if (magic1 == KSU_INSTALL_MAGIC1 && magic2 == SUSFS_MAGIC) {
++        unsigned int cmd = (unsigned int)PT_REGS_PARM3(real_regs);
++        void __user *arg = (void __user *)PT_REGS_SYSCALL_PARM4(real_regs);
++
++        ksu_susfs_handle_command(cmd, arg);
++        return 0;
++    }
++#endif
++
+     if (magic1 == KSU_INSTALL_MAGIC1 && magic2 == KSU_INSTALL_MAGIC2) {
+         struct ksu_install_fd_tw *tw;
+         unsigned long arg4 = (unsigned long)PT_REGS_SYSCALL_PARM4(real_regs);

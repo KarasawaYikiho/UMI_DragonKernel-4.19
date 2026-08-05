@@ -111,6 +111,11 @@ if sukisu_patch not in tracked:
     fail("missing SukiSU compatibility patch")
 if hashlib.sha256((ROOT / sukisu_patch).read_bytes()).hexdigest() != sukisu["compat_patch_sha256"]:
     fail("SukiSU compatibility patch hash mismatch")
+sukisu_susfs_patch = "patches/sukisu/v4.1.3-susfs-v1.5.5.patch"
+if sukisu_susfs_patch not in tracked:
+    fail("missing SukiSU SUSFS patch")
+if hashlib.sha256((ROOT / sukisu_susfs_patch).read_bytes()).hexdigest() != sukisu.get("susfs_patch_sha256"):
+    fail("SukiSU SUSFS patch hash mismatch")
 
 susfs = data["upstreams"].get("susfs_4_19", {})
 if susfs.get("url") != "https://gitlab.com/simonpunk/susfs4ksu.git":

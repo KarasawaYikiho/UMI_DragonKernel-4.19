@@ -94,7 +94,8 @@
       "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra.git",
       "ref": "v4.1.3",
       "commit": "0ca744a88835144c58d8256ebb32c279edabfcde",
-      "compat_patch_sha256": "3e013db3e99fba7c58bd369ba5484c1c3440bc820d38258c075ad64624fe4903"
+      "compat_patch_sha256": "3e013db3e99fba7c58bd369ba5484c1c3440bc820d38258c075ad64624fe4903",
+      "susfs_patch_sha256": "b0fbf1733310460ce6c6025266866c42cf8af559d9670f48ef20014d031e9279"
     },
     "susfs_4_19": {
       "url": "https://gitlab.com/simonpunk/susfs4ksu.git",
