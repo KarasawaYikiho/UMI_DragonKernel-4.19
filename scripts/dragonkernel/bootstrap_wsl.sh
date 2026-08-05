@@ -6,8 +6,14 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease; then
   exit 1
 fi
 
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+if (( EUID == 0 )); then
+  SUDO=()
+else
+  SUDO=(sudo)
+fi
+
+"${SUDO[@]}" apt-get update
+"${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
   bc bison build-essential ccache cpio curl device-tree-compiler flex git kmod \
   libelf-dev libncurses-dev libssl-dev lld llvm lz4 lzop pahole python3 rsync \
   unzip xz-utils zip zstd
