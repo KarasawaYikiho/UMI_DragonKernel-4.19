@@ -41,6 +41,19 @@
     "ref": "lineage-20.0",
     "commit": "54220fd601050b350b2af7adc913089ebf0e7aed"
   },
+  "boot_tools": {
+    "avbtool": {
+      "url": "https://android.googlesource.com/platform/external/avb",
+      "ref": "android-15.0.0_r1",
+      "commit": "25a14f7e3e6493a7f1a42aa9f78209d4dbe848e9"
+    },
+    "magiskboot": {
+      "version": "v30.7",
+      "url": "https://github.com/topjohnwu/Magisk/releases/download/v30.7/Magisk-v30.7.apk",
+      "apk_sha256": "e0d32d2123532860f97123d927b1bb86c4e08e6fd8a48bfc6b5bee0afae9ebd5",
+      "binary_sha256": "a18ecbd7981179494b7d281453d6c4e25b5c719e7d2ef7f6eba3c6be3043c58e"
+    }
+  },
   "upstreams": {
     "lineage": {
       "url": "https://github.com/LineageOS/android_kernel_xiaomi_sm8250.git",

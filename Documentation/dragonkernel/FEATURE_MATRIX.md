@@ -13,7 +13,7 @@
 | KPM | SukiSU | 待评估 | 审查 KALLSYMS、W^X 和启动稳定性 |
 | SUSFS | SukiSU | 待评估 | 审查 VFS、namespace 和 LSM 冲突 |
 | BBG | 全部 | 待评估 | 验证关键分区拦截及正常刷写放行 |
-| boot / DTBO | 每次发布 | 待评估 | 镜像结构、分区尺寸和 AVB 验证 |
+| boot / DTBO | 每次发布 | 开发中 | boot 已完成本地结构与 AVB 校验；待 DTBO 和真机启动 |
 | 可刷 ZIP | 每次发布 | 待评估 | 设备断言、备份、回滚和校验通过 |
 
 状态提升必须附带构建日志、SHA-256、启动记录和测试结果。

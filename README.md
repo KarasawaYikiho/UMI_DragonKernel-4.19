@@ -11,7 +11,7 @@
 
 ## 状态
 
-五台设备的 Original `Image`、DTB 和模块已在 WSL 与 GitHub Actions 中构建成功。启动、DTBO、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+五台设备的 Original `Image`、DTB 和模块已在 WSL 与 GitHub Actions 中构建成功。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、DTBO、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
 
 ## 构建边界
 

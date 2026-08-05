@@ -83,4 +83,23 @@ if not re.fullmatch(r"[0-9a-f]{40}", toolchain["commit"]):
 if toolchain["name"] != "clang-r416183b":
     fail("unexpected baseline toolchain")
 
+magiskboot = data.get("boot_tools", {}).get("magiskboot", {})
+if magiskboot.get("version") != "v30.7":
+    fail("unexpected magiskboot version")
+if magiskboot.get("url") != (
+    "https://github.com/topjohnwu/Magisk/releases/download/v30.7/Magisk-v30.7.apk"
+):
+    fail("unexpected magiskboot URL")
+for field in ("apk_sha256", "binary_sha256"):
+    if not re.fullmatch(r"[0-9a-f]{64}", magiskboot.get(field, "")):
+        fail(f"invalid magiskboot {field}")
+
+avbtool = data.get("boot_tools", {}).get("avbtool", {})
+if avbtool != {
+    "url": "https://android.googlesource.com/platform/external/avb",
+    "ref": "android-15.0.0_r1",
+    "commit": "25a14f7e3e6493a7f1a42aa9f78209d4dbe848e9",
+}:
+    fail("unexpected avbtool lock")
+
 print(f"DragonKernel baseline OK: {len(devices)} devices / kernel {actual}")
