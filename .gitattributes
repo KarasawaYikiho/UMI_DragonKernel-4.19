@@ -7,5 +7,11 @@
 *.config text eol=lf
 Kconfig text eol=lf
 Makefile text eol=lf
+/.gitattributes text eol=lf
+/.gitignore text eol=lf
+/.gitmodules text eol=lf
+/README.md text eol=lf
+/Documentation/dragonkernel/*.json text eol=lf
+/Documentation/dragonkernel/*.md text eol=lf
 patches/susfs/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
 patches/sukisu/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof

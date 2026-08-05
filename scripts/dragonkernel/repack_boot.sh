@@ -9,8 +9,9 @@ fi
 root=$(git rev-parse --show-toplevel)
 baseline=$root/Documentation/dragonkernel/baseline.json
 expected_sha=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["boot_tools"]["magiskboot"]["binary_sha256"])' "$baseline")
+magisk_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["boot_tools"]["magiskboot"]["version"])' "$baseline")
 expected_avb_commit=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["boot_tools"]["avbtool"]["commit"])' "$baseline")
-magiskboot=${MAGISKBOOT:-"$HOME/toolchains/magisk-v30.7/magiskboot"}
+magiskboot=${MAGISKBOOT:-"$HOME/toolchains/magisk-$magisk_version/magiskboot"}
 avbtool=${AVBTOOL:-"$HOME/toolchains/avb-android-15/avbtool.py"}
 template=$(realpath "$1")
 kernel=$(realpath "$2")

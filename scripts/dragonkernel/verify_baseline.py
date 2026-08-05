@@ -31,14 +31,54 @@ tracked = set(
         ["git", "ls-files"], cwd=ROOT, text=True
     ).splitlines()
 )
-forbidden_files = {"AGENT.md", "AGENTS.md", "Agent.md", "Agents.md"}
-forbidden_prefixes = (".dragonkernel-private/", "artifacts/", "private/", "temp/", "tmp/")
-forbidden_suffixes = (".log", ".tmp")
+forbidden_files = {
+    "agent.md",
+    "agents.md",
+    "plan.md",
+    "plans.md",
+    "superpower.md",
+    "superpowers.md",
+}
+forbidden_prefixes = (
+    ".dragonkernel-private/",
+    "artifacts/",
+    "build/",
+    "dist/",
+    "out/",
+    "private/",
+    "temp/",
+    "tmp/",
+)
+forbidden_components = {
+    ".agents",
+    ".codex",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".superpowers",
+    "__pycache__",
+    "node_modules",
+    "superpowers",
+}
+forbidden_suffixes = (
+    ".bak",
+    ".log",
+    ".orig",
+    ".pyc",
+    ".pyo",
+    ".rej",
+    ".swo",
+    ".swp",
+    ".tmp",
+    "~",
+)
 for path in tracked:
+    normalized = path.casefold()
     if (
-        path in forbidden_files
-        or path.startswith(forbidden_prefixes)
-        or path.endswith(forbidden_suffixes)
+        normalized.rsplit("/", 1)[-1] in forbidden_files
+        or normalized.startswith(forbidden_prefixes)
+        or normalized.endswith(forbidden_suffixes)
+        or forbidden_components.intersection(normalized.split("/")[:-1])
     ):
         fail(f"forbidden engineering or temporary file is tracked: {path}")
 

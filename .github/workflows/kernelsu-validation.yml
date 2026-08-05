@@ -29,15 +29,7 @@ jobs:
 
       - name: Fetch locked toolchain
         shell: bash
-        run: |
-          name=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["name"])')
-          url=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["url"])')
-          ref=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["ref"])')
-          commit=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["commit"])')
-          toolchain="$RUNNER_TEMP/$name"
-          git clone --depth=1 --single-branch --branch "$ref" "$url" "$toolchain"
-          test "$(git -C "$toolchain" rev-parse HEAD)" = "$commit"
-          echo "TOOLCHAIN_DIR=$toolchain" >> "$GITHUB_ENV"
+        run: scripts/dragonkernel/prepare_toolchain.sh "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Apply locked SUSFS patches
         run: scripts/dragonkernel/prepare_susfs.sh
