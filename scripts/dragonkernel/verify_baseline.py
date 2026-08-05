@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 import re
 import subprocess
@@ -76,8 +77,8 @@ if data.get("release_naming") != expected_release_naming:
 for name, upstream in data["upstreams"].items():
     if not re.fullmatch(r"[0-9a-f]{40}", upstream["commit"]):
         fail(f"{name} commit is not a full SHA-1")
-    if not upstream["url"].startswith("https://github.com/"):
-        fail(f"{name} URL is not HTTPS GitHub")
+    if not upstream["url"].startswith(("https://github.com/", "https://gitlab.com/")):
+        fail(f"{name} URL is not an approved HTTPS source")
 
 if data["upstreams"].get("kernelsu_non_gki") != {
     "url": "https://github.com/tiann/KernelSU.git",
@@ -90,6 +91,25 @@ gitlink = subprocess.check_output(
 ).split()
 if gitlink[:2] != ["160000", data["upstreams"]["kernelsu_non_gki"]["commit"]]:
     fail("KernelSU submodule does not match its lock")
+
+susfs = data["upstreams"].get("susfs_4_19", {})
+if susfs.get("url") != "https://gitlab.com/simonpunk/susfs4ksu.git":
+    fail("unexpected SUSFS source")
+if susfs.get("ref") != "kernel-4.19" or susfs.get("commit") != "001e69919c6271f690fd00b17e4c721c9e599152":
+    fail("unexpected SUSFS 4.19 lock")
+for field in ("kernel_patch_sha256", "kernelsu_patch_sha256"):
+    if not re.fullmatch(r"[0-9a-f]{64}", susfs.get(field, "")):
+        fail(f"invalid SUSFS {field}")
+susfs_patches = {
+    "patches/susfs/kernel-4.19.patch": susfs["kernel_patch_sha256"],
+    "patches/susfs/kernelsu-v0.9.5.patch": susfs["kernelsu_patch_sha256"],
+}
+for path, expected_hash in susfs_patches.items():
+    if path not in tracked:
+        fail(f"missing SUSFS patch: {path}")
+    actual_hash = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+    if actual_hash != expected_hash:
+        fail(f"SUSFS patch hash mismatch: {path}")
 
 root_hiding = data.get("common_security", {}).get("root_hiding", {})
 if set(root_hiding.get("required_variants", [])) != expected_variants - {"original"}:

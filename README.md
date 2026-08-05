@@ -28,6 +28,7 @@ git submodule update --init --recursive
 bash scripts/dragonkernel/bootstrap_wsl.sh
 python3 scripts/dragonkernel/verify_baseline.py
 scripts/dragonkernel/build_original.sh umi
+scripts/dragonkernel/prepare_susfs.sh
 scripts/dragonkernel/build_kernelsu.sh umi
 ```
 

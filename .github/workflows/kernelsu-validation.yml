@@ -39,6 +39,9 @@ jobs:
           test "$(git -C "$toolchain" rev-parse HEAD)" = "$commit"
           echo "TOOLCHAIN_DIR=$toolchain" >> "$GITHUB_ENV"
 
+      - name: Apply locked SUSFS patches
+        run: scripts/dragonkernel/prepare_susfs.sh
+
       - name: Build KernelSU kernel
         run: scripts/dragonkernel/build_kernelsu.sh "${{ matrix.device }}"
 

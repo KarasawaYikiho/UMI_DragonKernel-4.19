@@ -82,7 +82,12 @@ make_args=(-C "$root" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1
   if [[ "$variant" == kernelsu ]]; then
     grep -qx 'CONFIG_KSU=y' "$out/.config"
     grep -qx 'CONFIG_KPROBES=y' "$out/.config"
-    grep -q ' kernelsu_init$' "$out/System.map"
+    grep -qx 'CONFIG_KSU_SUSFS=y' "$out/.config"
+    grep -qx '# CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT is not set' "$out/.config"
+    grep -qx 'CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y' "$out/.config"
+    grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
+    grep -q ' ksu_kernelsu_init$' "$out/System.map"
+    grep -q ' susfs_init$' "$out/System.map"
   else
     ! grep -q '^CONFIG_KSU=' "$out/.config"
   fi
