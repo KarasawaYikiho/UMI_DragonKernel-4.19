@@ -27,9 +27,20 @@ if actual != data["kernel"]["version"]:
 
 tracked = set(
     subprocess.check_output(
-        ["git", "ls-tree", "-r", "--name-only", "HEAD"], cwd=ROOT, text=True
+        ["git", "ls-files"], cwd=ROOT, text=True
     ).splitlines()
 )
+forbidden_files = {"AGENT.md", "AGENTS.md", "Agent.md", "Agents.md"}
+forbidden_prefixes = (".dragonkernel-private/", "artifacts/", "private/", "temp/", "tmp/")
+forbidden_suffixes = (".log", ".tmp")
+for path in tracked:
+    if (
+        path in forbidden_files
+        or path.startswith(forbidden_prefixes)
+        or path.endswith(forbidden_suffixes)
+    ):
+        fail(f"forbidden engineering or temporary file is tracked: {path}")
+
 for path in data["kernel"]["config_fragments"]:
     if path not in tracked:
         fail(f"missing config fragment: {path}")
@@ -44,6 +55,21 @@ for device in devices:
 expected_variants = {"original", "magisk", "kernelsu", "sukisu-kpm-susfs"}
 if set(data["release_variants"]) != expected_variants:
     fail("release variant contract changed")
+
+expected_release_naming = {
+    "timezone": "Asia/Shanghai",
+    "timestamp_format": "yyyyMMddHHmm",
+    "tag_template": "UMI_{timestamp}_{variant}",
+    "asset_base_template": "UMI_{timestamp}_{variant}_Build",
+    "variant_names": {
+        "original": "Original",
+        "magisk": "Magisk",
+        "kernelsu": "KernelSU",
+        "sukisu-kpm-susfs": "SukiSU_KPM_SUSFS",
+    },
+}
+if data.get("release_naming") != expected_release_naming:
+    fail("release naming contract changed")
 
 for name, upstream in data["upstreams"].items():
     if not re.fullmatch(r"[0-9a-f]{40}", upstream["commit"]):

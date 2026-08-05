@@ -79,6 +79,18 @@
     "kernelsu",
     "sukisu-kpm-susfs"
   ],
+  "release_naming": {
+    "timezone": "Asia/Shanghai",
+    "timestamp_format": "yyyyMMddHHmm",
+    "tag_template": "UMI_{timestamp}_{variant}",
+    "asset_base_template": "UMI_{timestamp}_{variant}_Build",
+    "variant_names": {
+      "original": "Original",
+      "magisk": "Magisk",
+      "kernelsu": "KernelSU",
+      "sukisu-kpm-susfs": "SukiSU_KPM_SUSFS"
+    }
+  },
   "common_security": {
     "bbg": "required-after-validation"
   },

@@ -79,8 +79,16 @@ modules.builtin
 
 # DragonKernel private inputs and local release outputs
 /.dragonkernel-private/
+/AGENT.md
+/AGENTS.md
+/Agent.md
+/Agents.md
 /artifacts/
 /private/
+/temp/
+/tmp/
+/*.log
+/*.tmp
 
 #
 # tar directory (make tar*-pkg)
