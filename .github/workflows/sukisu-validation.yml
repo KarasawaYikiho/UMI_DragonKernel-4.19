@@ -1,6 +1,15 @@
 name: SukiSU validation build
 
 on:
+  push:
+    paths:
+      - ".github/workflows/sukisu-validation.yml"
+      - "arch/arm64/configs/vendor/**"
+      - "drivers/**"
+      - "patches/sukisu/**"
+      - "patches/susfs/kernel-4.19.patch"
+      - "scripts/dragonkernel/**"
+      - "Documentation/dragonkernel/baseline.json"
   workflow_dispatch:
   workflow_call:
 
