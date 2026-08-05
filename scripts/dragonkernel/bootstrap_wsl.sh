@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! grep -qi microsoft /proc/sys/kernel/osrelease; then
-  echo "This script must run inside WSL 2." >&2
+if ! grep -qi microsoft /proc/sys/kernel/osrelease \
+  && [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
+  echo "This script must run inside WSL 2 or GitHub Actions." >&2
   exit 1
 fi
 
@@ -23,4 +24,4 @@ mkdir -p "$HOME/src" "$HOME/toolchains" "$HOME/.cache/dragonkernel"
 git config --global user.name "Karasawa"
 git config --global user.email "2339725024@qq.com"
 
-echo "DragonKernel WSL dependencies are ready."
+echo "DragonKernel WSL/CI dependencies are ready."
