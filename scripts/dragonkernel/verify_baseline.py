@@ -44,6 +44,8 @@ for path in tracked:
 for path in data["kernel"]["config_fragments"]:
     if path not in tracked:
         fail(f"missing config fragment: {path}")
+if "arch/arm64/configs/vendor/dragonkernel-kernelsu.config" not in tracked:
+    fail("missing KernelSU config fragment")
 
 devices = data["device_family"]["devices"]
 if len({device["codename"] for device in devices}) != len(devices):
@@ -76,6 +78,24 @@ for name, upstream in data["upstreams"].items():
         fail(f"{name} commit is not a full SHA-1")
     if not upstream["url"].startswith("https://github.com/"):
         fail(f"{name} URL is not HTTPS GitHub")
+
+if data["upstreams"].get("kernelsu_non_gki") != {
+    "url": "https://github.com/tiann/KernelSU.git",
+    "ref": "v0.9.5",
+    "commit": "b766b98513b5a7eb33bc1c4a76b5702bf1288f07",
+}:
+    fail("unexpected KernelSU non-GKI lock")
+gitlink = subprocess.check_output(
+    ["git", "ls-files", "--stage", "drivers/kernelsu"], cwd=ROOT, text=True
+).split()
+if gitlink[:2] != ["160000", data["upstreams"]["kernelsu_non_gki"]["commit"]]:
+    fail("KernelSU submodule does not match its lock")
+
+root_hiding = data.get("common_security", {}).get("root_hiding", {})
+if set(root_hiding.get("required_variants", [])) != expected_variants - {"original"}:
+    fail("root hiding must cover every Root variant")
+if root_hiding.get("validation_layers") != ["kernel", "manager", "application"]:
+    fail("root hiding validation layers changed")
 
 toolchain = data["toolchain"]
 if not re.fullmatch(r"[0-9a-f]{40}", toolchain["commit"]):

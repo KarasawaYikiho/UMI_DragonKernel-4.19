@@ -7,13 +7,20 @@
 | LineageOS 原始基线 | 全部 | 已构建 | 五设备启动与硬件回归 |
 | 小米官方驱动差异 | 全部 | 待评估 | 按子系统确认缺失项与来源提交 |
 | 调度与功耗优化 | 全部 | 待评估 | 建立性能、温度、续航基线 |
-| Magisk | Magisk | 待评估 | 使用与 Original 相同的内核验证 boot 修补 |
-| KernelSU | KernelSU | 待评估 | 锁定版本并验证 4.19 非 GKI 路径 |
-| SukiSU Ultra | SukiSU | 待评估 | 锁定版本和管理器匹配关系 |
+| Magisk | Magisk | 待评估 | 验证 boot 修补、注入隐藏和应用检测 |
+| KernelSU | KernelSU | 已构建 | 验证 SUSFS、启动和管理器隐藏 |
+| SukiSU Ultra | SukiSU | 待评估 | 锁定版本并验证 SUSFS、KPM 与管理器隐藏 |
 | KPM | SukiSU | 待评估 | 审查 KALLSYMS、W^X 和启动稳定性 |
-| SUSFS | SukiSU | 待评估 | 审查 VFS、namespace 和 LSM 冲突 |
+| SUSFS | KernelSU、SukiSU | 待评估 | 审查 VFS、namespace 和 LSM 冲突 |
 | BBG | 全部 | 待评估 | 验证关键分区拦截及正常刷写放行 |
-| boot / DTBO | 每次发布 | 开发中 | boot 已完成本地结构与 AVB 校验；待 DTBO 和真机启动 |
+| boot / DTBO | 每次发布 | 已构建 | boot 已完成本地结构与 AVB 校验；待真机启动 |
 | 可刷 ZIP | 每次发布 | 待评估 | 设备断言、备份、回滚和校验通过 |
 
 状态提升必须附带构建日志、SHA-256、启动记录和测试结果。
+
+Root 隐藏验收要求：
+
+- 内核层：隐藏 Root 相关挂载、路径、进程、文件属性和内核特征。
+- 管理层：支持按应用配置的 Root 授权、注入排除和管理器隐藏。
+- 应用层：在真机上通过多类 Root、挂载、完整性和环境检测。
+- 未完成真机检测时，只能标记为“已构建”或“已启动”，不得宣称完整隐藏。

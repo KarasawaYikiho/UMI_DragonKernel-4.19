@@ -7,11 +7,12 @@
 - 设备：`umi`、`cmi`、`cas`、`thyme`、`apollo`
 - 内核：4.19.325
 - 变体：Original、Magisk、KernelSU、SukiSU + KPM + SUSFS
+- Root 变体必须通过内核、管理器与应用检测三层隐藏验证。
 - 公共安全能力：BBG，通过独立兼容性和真机测试后启用
 
 ## 状态
 
-五台设备的 Original `Image`、DTB 和模块已在 WSL 与 GitHub Actions 中构建成功。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、DTBO、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+五台设备的 Original `Image`、DTB、DTBO 和模块已在 WSL 与 GitHub Actions 中构建成功；`umi` KernelSU 变体已通过本地干净构建。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
 
 ## 构建边界
 
@@ -23,9 +24,11 @@
 ## 命令
 
 ```bash
+git submodule update --init --recursive
 bash scripts/dragonkernel/bootstrap_wsl.sh
 python3 scripts/dragonkernel/verify_baseline.py
 scripts/dragonkernel/build_original.sh umi
+scripts/dragonkernel/build_kernelsu.sh umi
 ```
 
 ## 文档

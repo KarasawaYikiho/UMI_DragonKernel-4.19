@@ -2,4 +2,4 @@
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
-exec "$root/scripts/dragonkernel/build_kernel.sh" original "$@"
+exec "$root/scripts/dragonkernel/build_kernel.sh" kernelsu "$@"

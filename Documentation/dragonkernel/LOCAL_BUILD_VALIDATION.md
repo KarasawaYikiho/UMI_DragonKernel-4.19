@@ -11,20 +11,30 @@
 
 ## 本机结果
 
-| 设备 | Image 字节数 | Image SHA-256 | DTB | 模块 |
-|---|---:|---|---:|---:|
-| `umi` | 55,560,208 | `e0e75831bc243ddbeeab957eca8728d10ddc9c447ddcaba3efa55000b06f23c1` | 3 | 3 |
-| `cmi` | 53,467,152 | `9c4875bd56274ba74c1d3dfe3c43e6fa3bfaeb67c96c0bcc8a148ab6957b399e` | 3 | 3 |
-| `cas` | 53,461,008 | `3a44faac453cb4cbef4379e6677fc2de1f82795f02091b35c36f0895b1ffe214` | 3 | 3 |
-| `thyme` | 55,566,352 | `3d96f322c84a381c09011bbd8d160315d8e205f136f2b6adc37ca4270e3f8ba7` | 3 | 3 |
-| `apollo` | 53,471,248 | `ca3152cb436fb21787fa472d206cec6c5b48166f6d4b2add536d6c6e17a6e2c8` | 3 | 3 |
+| 设备 | Image 字节数 | Image SHA-256 | DTB | DTBO | 模块 |
+|---|---:|---|---:|---:|---:|
+| `umi` | 55,560,208 | `e0e75831bc243ddbeeab957eca8728d10ddc9c447ddcaba3efa55000b06f23c1` | 3 | 12 | 3 |
+| `cmi` | 53,467,152 | `9c4875bd56274ba74c1d3dfe3c43e6fa3bfaeb67c96c0bcc8a148ab6957b399e` | 3 | 12 | 3 |
+| `cas` | 53,461,008 | `3a44faac453cb4cbef4379e6677fc2de1f82795f02091b35c36f0895b1ffe214` | 3 | 12 | 3 |
+| `thyme` | 55,566,352 | `3d96f322c84a381c09011bbd8d160315d8e205f136f2b6adc37ca4270e3f8ba7` | 3 | 12 | 3 |
+| `apollo` | 53,471,248 | `ca3152cb436fb21787fa472d206cec6c5b48166f6d4b2add536d6c6e17a6e2c8` | 3 | 12 | 3 |
 
 提交 `559f31fa3c2f2e8af0d0a18304e0e5a5336ef594` 已通过五设备 GitHub Actions 干净重建，并生成五份短期验证 Artifact。
 
 本地 boot 重打包已验证模板无修改往返、内核替换回读、分区尺寸限制和 AVB 摘要。该结果只证明镜像结构有效，不证明设备可启动。
 
+## KernelSU 结果
+
+- KernelSU：`v0.9.5` / `b766b98513b5a7eb33bc1c4a76b5702bf1288f07`
+- 设备：`umi`
+- Image：55,580,688 字节，SHA-256 `de4ff50c42c5b9eb639739b37f533019480705b5618cd8af2fbe9d81c341d2b1`
+- 产物：3 个 DTB、12 个 DTBO、3 个模块
+- 校验：`CONFIG_KSU=y`、`CONFIG_KPROBES=y`、`kernelsu_init` 存在，`SHA256SUMS` 全部通过
+
+该结果只证明 KernelSU 已集成并构建；不证明已启动、Root 可用或隐藏通过。
+
 ## 未完成
 
-- DTBO、boot.img 和可刷 ZIP
+- boot.img 和可刷 ZIP
 - 临时启动、冷启动和硬件矩阵
 - 稳定性、性能、温度和功耗验证
