@@ -6,19 +6,22 @@
 
 ## 当前状态
 
-- 阶段：P0 多设备基线初始化
+- 阶段：P1 原版基线（本机构建已验证，启动待验证）
 - 设备：`umi`、`cmi`、`cas`、`thyme`、`apollo`
 - 内核：4.19.325
 - LineageOS 基线：`lineage-23.2` / `71b13e62f057a649b77fe4062feb73ee72ad609c`
 - 小米参考：`umi-q-oss` / `db67ca6001320efc1f945c270635434fc403a9d4`
 - 已确认配置：Kona 公共配置 + 对应设备的 `vendor/xiaomi/<codename>.config`
-- 构建、启动、HyperOS 3 兼容性：尚未验证
+- 本机验证构建：五台设备的 `Image`、3 个 DTB 和 3 个模块均已生成
+- 启动、硬件与 HyperOS 3 兼容性：尚未验证
 
 任何 `boot.img` 或刷机包在通过真机门禁前都不得标记为稳定版。
 
 ## 设计边界
 
 - `main` 只接收已通过对应阶段门禁的变更。
+- 本机 WSL 编译只用于开发、测试和验证，不得作为 Releases 资产上传。
+- Releases 中的可刷产物只能由 GitHub Actions 从干净提交重新编译、校验并发布。
 - 小米官方树不整树合并；驱动和修复按子系统、按提交移植并记录来源。
 - 调度、电源、内存和 I/O 优化一次只改变一个变量，并保留前后数据。
 - 每台设备发布四种产物：原版、Magisk、KernelSU、SukiSU+KPM+SUSFS。
@@ -34,6 +37,7 @@
 - [设备与 ROM 输入](Documentation/dragonkernel/DEVICE_BASELINE.md)
 - [私密输入规则](Documentation/dragonkernel/PRIVATE_INPUTS.md)
 - [可机读基线锁](Documentation/dragonkernel/baseline.json)
+- [本机原版构建验证](Documentation/dragonkernel/LOCAL_BUILD_VALIDATION.md)
 
 运行项目契约检查：
 
@@ -46,5 +50,13 @@ WSL 2 环境初始化：
 ```bash
 bash scripts/dragonkernel/bootstrap_wsl.sh
 ```
+
+本机原版验证构建：
+
+```bash
+scripts/dragonkernel/build_original.sh umi
+```
+
+GitHub Actions 的 `Original validation build` 工作流会从干净提交并行重建五台设备，并只保留 14 天验证 Artifact。正式可刷包仍须通过后续 Release 工作流从同一构建入口生成，禁止以验证 Artifact 或本机文件代替 Release 产物。
 
 > 刷写内核有无法启动或丢失数据的风险。开发阶段应优先使用 `fastboot boot` 临时启动，并始终保留已验证的原厂镜像和恢复路径。

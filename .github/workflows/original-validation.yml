@@ -1,0 +1,56 @@
+name: Original validation build
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: original-${{ matrix.device }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [umi, cmi, cas, thyme, apollo]
+    env:
+      OUT_ROOT: ${{ runner.temp }}/dragonkernel-out
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: bash scripts/dragonkernel/bootstrap_wsl.sh
+
+      - name: Fetch locked toolchain
+        shell: bash
+        run: |
+          name=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["name"])')
+          url=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["url"])')
+          ref=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["ref"])')
+          commit=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["toolchain"]["commit"])')
+          toolchain="$RUNNER_TEMP/$name"
+          git clone --depth=1 --single-branch --branch "$ref" "$url" "$toolchain"
+          test "$(git -C "$toolchain" rev-parse HEAD)" = "$commit"
+          echo "TOOLCHAIN_DIR=$toolchain" >> "$GITHUB_ENV"
+
+      - name: Build original kernel
+        run: scripts/dragonkernel/build_original.sh "${{ matrix.device }}"
+
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: original-${{ matrix.device }}-${{ github.sha }}
+          path: |
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/.config
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/SHA256SUMS
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/build.log
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/arch/arm64/boot/Image
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/arch/arm64/boot/dts/**/*.dtb
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/**/*.ko
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

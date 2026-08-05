@@ -22,3 +22,4 @@ jobs:
             arch/arm64/configs/vendor
           sparse-checkout-cone-mode: false
       - run: python3 scripts/dragonkernel/verify_baseline.py
+      - run: bash -n scripts/dragonkernel/bootstrap_wsl.sh scripts/dragonkernel/build_original.sh
