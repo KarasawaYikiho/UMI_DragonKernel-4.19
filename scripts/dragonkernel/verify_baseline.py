@@ -47,6 +47,8 @@ for path in data["kernel"]["config_fragments"]:
         fail(f"missing config fragment: {path}")
 if "arch/arm64/configs/vendor/dragonkernel-kernelsu.config" not in tracked:
     fail("missing KernelSU config fragment")
+if "arch/arm64/configs/vendor/dragonkernel-sukisu.config" not in tracked:
+    fail("missing SukiSU config fragment")
 
 devices = data["device_family"]["devices"]
 if len({device["codename"] for device in devices}) != len(devices):
@@ -91,6 +93,24 @@ gitlink = subprocess.check_output(
 ).split()
 if gitlink[:2] != ["160000", data["upstreams"]["kernelsu_non_gki"]["commit"]]:
     fail("KernelSU submodule does not match its lock")
+
+sukisu = data["upstreams"].get("sukisu_ultra", {})
+if sukisu.get("url") != "https://github.com/SukiSU-Ultra/SukiSU-Ultra.git":
+    fail("unexpected SukiSU source")
+if sukisu.get("ref") != "v4.1.3" or sukisu.get("commit") != "0ca744a88835144c58d8256ebb32c279edabfcde":
+    fail("unexpected SukiSU lock")
+if not re.fullmatch(r"[0-9a-f]{64}", sukisu.get("compat_patch_sha256", "")):
+    fail("invalid SukiSU compatibility patch hash")
+sukisu_gitlink = subprocess.check_output(
+    ["git", "ls-files", "--stage", "drivers/sukisu"], cwd=ROOT, text=True
+).split()
+if sukisu_gitlink[:2] != ["160000", sukisu["commit"]]:
+    fail("SukiSU submodule does not match its lock")
+sukisu_patch = "patches/sukisu/v4.1.3-kernel-4.19.patch"
+if sukisu_patch not in tracked:
+    fail("missing SukiSU compatibility patch")
+if hashlib.sha256((ROOT / sukisu_patch).read_bytes()).hexdigest() != sukisu["compat_patch_sha256"]:
+    fail("SukiSU compatibility patch hash mismatch")
 
 susfs = data["upstreams"].get("susfs_4_19", {})
 if susfs.get("url") != "https://gitlab.com/simonpunk/susfs4ksu.git":

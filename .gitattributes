@@ -1,3 +1,11 @@
 *.c   diff=cpp
 *.h   diff=cpp
-patches/susfs/*.patch whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.config text eol=lf
+Kconfig text eol=lf
+Makefile text eol=lf
+patches/susfs/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
+patches/sukisu/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof

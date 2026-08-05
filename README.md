@@ -12,7 +12,7 @@
 
 ## 状态
 
-五台设备的 Original 与 KernelSU 产物已通过 GitHub Actions 矩阵构建；`umi` KernelSU + SUSFS 已通过 WSL 干净树构建。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+五台设备的 Original、KernelSU 及 KernelSU + SUSFS 产物已通过 GitHub Actions 矩阵构建。`umi` SukiSU + KPM 基础集成已通过 WSL 全量构建，SUSFS 接线仍在开发。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、Root 隐藏、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
 
 ## 构建边界
 
@@ -30,6 +30,8 @@ python3 scripts/dragonkernel/verify_baseline.py
 scripts/dragonkernel/build_original.sh umi
 scripts/dragonkernel/prepare_susfs.sh
 scripts/dragonkernel/build_kernelsu.sh umi
+scripts/dragonkernel/prepare_sukisu.sh
+scripts/dragonkernel/build_sukisu.sh umi
 ```
 
 ## 文档

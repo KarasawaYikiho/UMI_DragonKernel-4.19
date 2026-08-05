@@ -123,6 +123,8 @@ patches
 !patches/
 !patches/susfs/
 !patches/susfs/*.patch
+!patches/sukisu/
+!patches/sukisu/*.patch
 series
 
 # cscope files

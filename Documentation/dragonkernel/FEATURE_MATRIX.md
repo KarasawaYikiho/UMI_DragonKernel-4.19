@@ -9,8 +9,8 @@
 | 调度与功耗优化 | 全部 | 待评估 | 建立性能、温度、续航基线 |
 | Magisk | Magisk | 待评估 | 验证 boot 修补、注入隐藏和应用检测 |
 | KernelSU | KernelSU | 已构建 | 验证 SUSFS、启动和管理器隐藏 |
-| SukiSU Ultra | SukiSU | 待评估 | 锁定版本并验证 SUSFS、KPM 与管理器隐藏 |
-| KPM | SukiSU | 待评估 | 审查 KALLSYMS、W^X 和启动稳定性 |
+| SukiSU Ultra | SukiSU | 已构建 | 完成 SUSFS 接线并验证启动与管理器隐藏 |
+| KPM | SukiSU | 已构建 | 审查 KALLSYMS、W^X 和启动稳定性 |
 | SUSFS | KernelSU、SukiSU | 待评估 | 审查 VFS、namespace 和 LSM 冲突 |
 | BBG | 全部 | 待评估 | 验证关键分区拦截及正常刷写放行 |
 | boot / DTBO | 每次发布 | 已构建 | boot 已完成本地结构与 AVB 校验；待真机启动 |

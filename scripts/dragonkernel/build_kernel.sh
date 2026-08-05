@@ -4,12 +4,12 @@ set -euo pipefail
 variant=${1:-}
 device=${2:-}
 case "$variant" in
-  original|kernelsu) ;;
-  *) echo "usage: $0 {original|kernelsu} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
+  original|kernelsu|sukisu) ;;
+  *) echo "usage: $0 {original|kernelsu|sukisu} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
 esac
 case "$device" in
   umi|cmi|cas|thyme|apollo) ;;
-  *) echo "usage: $0 {original|kernelsu} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
+  *) echo "usage: $0 {original|kernelsu|sukisu} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
 esac
 
 root=$(git rev-parse --show-toplevel)
@@ -46,6 +46,15 @@ if [[ "$variant" == kernelsu ]]; then
   fi
   config_targets+=(vendor/dragonkernel-kernelsu.config)
   local_suffix=ksu
+elif [[ "$variant" == sukisu ]]; then
+  expected_sukisu_commit=$(json_value upstreams sukisu_ultra commit)
+  actual_sukisu_commit=$(git -C "$root/drivers/sukisu" rev-parse HEAD 2>/dev/null || true)
+  if [[ "$actual_sukisu_commit" != "$expected_sukisu_commit" ]]; then
+    echo "SukiSU mismatch: expected $expected_sukisu_commit, got ${actual_sukisu_commit:-missing}" >&2
+    exit 1
+  fi
+  config_targets+=(vendor/dragonkernel-sukisu.config)
+  local_suffix=suki
 fi
 
 mkdir -p "$out"
@@ -88,6 +97,12 @@ make_args=(-C "$root" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1
     grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
     grep -q ' ksu_kernelsu_init$' "$out/System.map"
     grep -q ' susfs_init$' "$out/System.map"
+  elif [[ "$variant" == sukisu ]]; then
+    grep -qx 'CONFIG_DRAGONKERNEL_SUKISU=y' "$out/.config"
+    grep -qx 'CONFIG_KSU=y' "$out/.config"
+    grep -qx 'CONFIG_KPM=y' "$out/.config"
+    grep -qx 'CONFIG_KALLSYMS_ALL=y' "$out/.config"
+    grep -q ' kernelsu_init$' "$out/System.map"
   else
     ! grep -q '^CONFIG_KSU=' "$out/.config"
   fi

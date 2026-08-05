@@ -39,6 +39,15 @@
 
 该结果只证明 KernelSU + SUSFS 已集成并构建；不证明已启动、Root 可用或隐藏通过。
 
+## SukiSU + KPM 基础结果
+
+- SukiSU Ultra：`v4.1.3` / `0ca744a88835144c58d8256ebb32c279edabfcde`
+- 设备：`umi`
+- 产物：Image、3 个 DTB、12 个 DTBO、3 个模块
+- 校验：`CONFIG_KSU=y`、`CONFIG_KPM=y`、`CONFIG_KALLSYMS_ALL=y`、`kernelsu_init` 存在
+
+该结果只证明 Linux 4.19 兼容补丁、SukiSU 和 KPM 可完成全量构建；SUSFS、启动、Root 功能及三层隐藏尚未验证。
+
 ## 未完成
 
 - boot.img 和可刷 ZIP

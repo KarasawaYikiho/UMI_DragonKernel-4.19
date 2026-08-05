@@ -1,0 +1,26 @@
+menu "DragonKernel root implementation"
+
+choice
+	prompt "Root implementation"
+	default DRAGONKERNEL_ROOT_NONE
+
+config DRAGONKERNEL_ROOT_NONE
+	bool "None"
+
+config DRAGONKERNEL_KERNELSU
+	bool "KernelSU"
+
+config DRAGONKERNEL_SUKISU
+	bool "SukiSU Ultra"
+
+endchoice
+
+if DRAGONKERNEL_KERNELSU
+source "drivers/kernelsu/kernel/Kconfig"
+endif
+
+if DRAGONKERNEL_SUKISU
+source "drivers/sukisu/kernel/Kconfig"
+endif
+
+endmenu
