@@ -1980,6 +1980,9 @@ static int fg_gen4_get_batt_profile_dt_props(struct fg_gen4_chip *chip,
 	if (rc < 0) {
 		pr_err("battery nominal capacity unavailable, rc:%d\n", rc);
 		fg->bp.nom_cap_uah = -EINVAL;
+		fg->bp.design_cap_orig_mah = -EINVAL;
+	} else {
+		fg->bp.design_cap_orig_mah = fg->bp.nom_cap_uah;
 	}
 
 	if (of_find_property(profile_node, "qcom,therm-coefficients", &len)) {
@@ -5415,6 +5418,19 @@ static int fg_psy_set_property(struct power_supply *psy,
 			chip->cl->learned_cap_uah = pval->intval;
 		mutex_unlock(&chip->cl->lock);
 		break;
+	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
+		if (!chip->cl || chip->cl->active || pval->intval % 1000 ||
+		    fg->bp.design_cap_orig_mah <= 0 ||
+		    pval->intval / 1000 < fg->bp.design_cap_orig_mah ||
+		    pval->intval / 1000 > fg->bp.design_cap_orig_mah * 2)
+			return -EINVAL;
+
+		mutex_lock(&chip->cl->lock);
+		fg->bp.nom_cap_uah = pval->intval / 1000;
+		chip->cl->nom_cap_uah = pval->intval;
+		mutex_unlock(&chip->cl->lock);
+		power_supply_changed(fg->fg_psy);
+		break;
 	case POWER_SUPPLY_PROP_CC_STEP:
 		if ((chip->ttf->cc_step.sel >= 0) &&
 				(chip->ttf->cc_step.sel < MAX_CC_STEPS)) {
@@ -5510,6 +5526,7 @@ static int fg_property_is_writeable(struct power_supply *psy,
 {
 	switch (psp) {
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
+	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
 	case POWER_SUPPLY_PROP_CC_STEP:
 	case POWER_SUPPLY_PROP_CC_STEP_SEL:
 	case POWER_SUPPLY_PROP_ESR_ACTUAL:
