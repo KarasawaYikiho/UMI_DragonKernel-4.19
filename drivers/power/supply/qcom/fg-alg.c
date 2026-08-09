@@ -755,7 +755,7 @@ int cap_learning_post_profile_init(struct cap_learning *cl, int64_t nom_cap_uah)
 			/* Restore only implausibly low persisted values. */
 			if (delta_cap_uah > pct_nom_cap_uah) {
 				pr_debug("learned_cap_uah: %lld is lower than expected, restoring nominal: %lld\n",
-					cl->learned_cap_uah, cl->nom_cap_uah);
+					 cl->learned_cap_uah, cl->nom_cap_uah);
 				cl->learned_cap_uah = cl->nom_cap_uah;
 			}
 		}
