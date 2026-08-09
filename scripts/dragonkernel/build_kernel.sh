@@ -87,6 +87,8 @@ mapfile -d '' modules < <(find "$out" -type f -name '*.ko' -print0 | sort -z)
 ((${#dtbs[@]} > 0))
 ((${#dtbos[@]} > 0))
 ((${#modules[@]} > 0))
+grep -qx 'CONFIG_UCLAMP_TASK=y' "$out/.config"
+grep -qx 'CONFIG_UCLAMP_TASK_GROUP=y' "$out/.config"
 
 if [[ "$variant" == kernelsu ]]; then
   grep -qx 'CONFIG_DRAGONKERNEL_KERNELSU=y' "$out/.config"
