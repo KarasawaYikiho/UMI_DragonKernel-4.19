@@ -747,18 +747,17 @@ int cap_learning_post_profile_init(struct cap_learning *cl, int64_t nom_cap_uah)
 		if (cl->learned_cap_uah == 0)
 			cl->learned_cap_uah = cl->nom_cap_uah;
 
-		delta_cap_uah = abs(cl->learned_cap_uah - cl->nom_cap_uah);
-		pct_nom_cap_uah = div64_s64((int64_t)cl->nom_cap_uah *
-				CAPACITY_DELTA_DECIPCT, 1000);
-		/*
-		 * If the learned capacity is out of range by 50% from the
-		 * nominal capacity, then overwrite the learned capacity with
-		 * the nominal capacity.
-		 */
-		if (cl->nom_cap_uah && delta_cap_uah > pct_nom_cap_uah) {
-			pr_debug("learned_cap_uah: %lld is higher than expected, capping it to nominal: %lld\n",
-				cl->learned_cap_uah, cl->nom_cap_uah);
-			cl->learned_cap_uah = cl->nom_cap_uah;
+		if (cl->nom_cap_uah &&
+		    cl->learned_cap_uah < cl->nom_cap_uah) {
+			delta_cap_uah = cl->nom_cap_uah - cl->learned_cap_uah;
+			pct_nom_cap_uah = div64_s64((int64_t)cl->nom_cap_uah *
+					CAPACITY_DELTA_DECIPCT, 1000);
+			/* Restore only implausibly low persisted values. */
+			if (delta_cap_uah > pct_nom_cap_uah) {
+				pr_debug("learned_cap_uah: %lld is lower than expected, restoring nominal: %lld\n",
+					cl->learned_cap_uah, cl->nom_cap_uah);
+				cl->learned_cap_uah = cl->nom_cap_uah;
+			}
 		}
 
 		rc = cl->store_learned_capacity(cl->data, cl->learned_cap_uah);

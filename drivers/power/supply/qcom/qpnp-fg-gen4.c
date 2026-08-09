@@ -5405,8 +5405,8 @@ static int fg_psy_set_property(struct power_supply *psy,
 			pr_warn("Capacity learning active!\n");
 			return 0;
 		}
-		if (pval->intval <= 0 || pval->intval > SHRT_MAX * 1000) {
-			pr_err("charge_full is invalid\n");
+		if (pval->intval <= 0 || pval->intval > chip->cl->nom_cap_uah) {
+			pr_err("charge_full is out of bounds\n");
 			return -EINVAL;
 		}
 		mutex_lock(&chip->cl->lock);

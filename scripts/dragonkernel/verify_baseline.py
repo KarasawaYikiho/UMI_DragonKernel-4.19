@@ -288,10 +288,21 @@ for path in battery_sources:
         fail(f"manual battery design capacity override remains in {path}")
 
 fg_gen4_source = (ROOT / battery_sources[0]).read_text(encoding="utf-8")
-if "pval->intval > chip->cl->nom_cap_uah" in fg_gen4_source:
-    fail("FG Gen4 learned capacity is still capped at stock capacity")
-if "pval->intval > SHRT_MAX * 1000" not in fg_gen4_source:
-    fail("FG Gen4 learned capacity lacks its storage-format safety bound")
+if "pval->intval > chip->cl->nom_cap_uah" not in fg_gen4_source:
+    fail("FG Gen4 manual learned-capacity writes must remain stock-bounded")
+
+fg_alg_path = ROOT / "drivers/power/supply/qcom/fg-alg.c"
+fg_alg_source = (
+    fg_alg_path.read_text(encoding="utf-8")
+    if fg_alg_path.exists()
+    else indexed_text("drivers/power/supply/qcom/fg-alg.c")
+)
+if "cl->learned_cap_uah < cl->nom_cap_uah" not in fg_alg_source:
+    fail("capacity learning must retain the implausibly-low value repair")
+if "abs(cl->learned_cap_uah - cl->nom_cap_uah)" in fg_alg_source:
+    fail("persisted learned capacity is still reset above the stock value")
+if "higher than expected, capping it to nominal" in fg_alg_source:
+    fail("persisted learned capacity still has an upper stock-cap reset")
 
 fast_workflow = ".github/workflows/fast-validation.yml"
 if fast_workflow not in tracked:
