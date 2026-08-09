@@ -130,11 +130,6 @@
 		pinctrl-0 = <&otg_vbus_boost_default>;
 	};
 
-	thermal_message: thermal-message {
-		board-sensor = "VIRTUAL-SENSOR";
-		ambient-sensor = "ABT-SENSOR";
-	};
-
 	irda_regulator: irda-regulator {
 		compatible = "regulator-dummy";
 		regulator-name = "irda_regulator";
