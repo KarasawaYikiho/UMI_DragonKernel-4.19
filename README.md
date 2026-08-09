@@ -13,7 +13,7 @@
 
 - 保留 WALT、schedutil、UCLAMP、前台 Binder 调度、输入 boost、PSI、zram、BFQ、F2FS 与 Qualcomm 硬件温控链。
 - 删除 Xiaomi `thermal_message` 用户态云控邮箱；保留 TSENS、BCL、LMH、标准 thermal zone 和硬件过热保护。
-- 三条电量计驱动均支持 root 按次启动设置设计容量，范围为原厂值至 2 倍；重启或配置重载恢复原厂值，不修改充电电压、电流、认证或温度保护。
+- 启动设计容量按设备型号固定：`umi`/`thyme` 4780、`cmi`/`cas` 4500、`apollo` 5000 mAh。FG Gen4 只解除学习容量不得高于原厂值的限制；BQ 路径直接报告电量计 FCC，不提供可写设计容量接口。
 - 提供单设备、单变体、带 ccache 的 Actions 快速构建，以及使用私有 ROM `boot.img` 模板的本地结构适配检查。
 
 ## 验证状态

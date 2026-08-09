@@ -97,6 +97,60 @@ for device in devices:
     if device["config"] not in tracked:
         fail(f"missing device config: {device['config']}")
 
+expected_capacity_mah = {
+    "umi": 4780,
+    "cmi": 4500,
+    "cas": 4500,
+    "thyme": 4780,
+    "apollo": 5000,
+}
+if {
+    device["codename"]: device.get("battery_capacity_mah")
+    for device in devices
+} != expected_capacity_mah:
+    fail("device battery capacity contract changed")
+
+
+def indexed_text(path: str) -> str:
+    return subprocess.check_output(
+        ["git", "show", f":{path}"], cwd=ROOT, text=True
+    )
+
+
+capacity_sources = {
+    "arch/arm64/boot/dts/vendor/qcom/umi-sm8250.dtsi": (
+        '"fg-gen4-batterydata-umi-gybm-4780mah.dtsi"',
+        '"fg-gen4-batterydata-umi-NVTBM4N-4780mah.dtsi"',
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/thyme-sm8250.dtsi": (
+        '"fg-gen4-batterydata-umi-gybm-4780mah.dtsi"',
+        '"fg-gen4-batterydata-umi-NVTBM4N-4780mah.dtsi"',
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/cmi-sm8250.dtsi": (
+        "bq,charge-full-design = <4500000>;",
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/cas-sm8250.dtsi": (
+        "bq,charge-full-design = <2250000>;",
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/apollo-sm8250.dtsi": (
+        '"fg-gen4-batterydata-apollo-sun-5000mah.dtsi"',
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/fg-gen4-batterydata-umi-gybm-4780mah.dtsi": (
+        "qcom,nom-batt-capacity-mah = <4780>;",
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/fg-gen4-batterydata-umi-NVTBM4N-4780mah.dtsi": (
+        "qcom,nom-batt-capacity-mah = <4780>;",
+    ),
+    "arch/arm64/boot/dts/vendor/qcom/fg-gen4-batterydata-apollo-sun-5000mah.dtsi": (
+        "qcom,nom-batt-capacity-mah = <5000>;",
+    ),
+}
+for path, required in capacity_sources.items():
+    source = indexed_text(path)
+    for token in required:
+        if token not in source:
+            fail(f"device battery capacity source changed: {path}")
+
 expected_variants = {"original", "magisk", "kernelsu", "sukisu-kpm-susfs"}
 if set(data["release_variants"]) != expected_variants:
     fail("release variant contract changed")
@@ -228,8 +282,16 @@ battery_sources = (
 )
 for path in battery_sources:
     source = (ROOT / path).read_text(encoding="utf-8")
-    if source.count("case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:") < 3:
-        fail(f"battery design capacity override is incomplete in {path}")
+    if source.count("case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:") != 1:
+        fail(f"battery design capacity must remain read-only in {path}")
+    if "design_cap_orig" in source or "batt_dc_orig" in source:
+        fail(f"manual battery design capacity override remains in {path}")
+
+fg_gen4_source = (ROOT / battery_sources[0]).read_text(encoding="utf-8")
+if "pval->intval > chip->cl->nom_cap_uah" in fg_gen4_source:
+    fail("FG Gen4 learned capacity is still capped at stock capacity")
+if "pval->intval > SHRT_MAX * 1000" not in fg_gen4_source:
+    fail("FG Gen4 learned capacity lacks its storage-format safety bound")
 
 fast_workflow = ".github/workflows/fast-validation.yml"
 if fast_workflow not in tracked:

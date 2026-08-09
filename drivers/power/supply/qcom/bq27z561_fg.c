@@ -213,7 +213,6 @@ struct bq_fg_chip {
 	int batt_fcc;	/* Full charge capacity */
 	int batt_rm;	/* Remaining capacity */
 	int batt_dc;	/* Design Capacity */
-	int batt_dc_orig;
 	int batt_volt;
 	int batt_temp;
 	int batt_curr;
@@ -1714,14 +1713,6 @@ static int fg_set_property(struct power_supply *psy,
 	struct bq_fg_chip *bq = power_supply_get_drvdata(psy);
 
 	switch (prop) {
-	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		if (bq->batt_dc_orig <= 0 ||
-		    val->intval < bq->batt_dc_orig ||
-		    val->intval > bq->batt_dc_orig * 2)
-			return -EINVAL;
-		bq->batt_dc = val->intval;
-		power_supply_changed(bq->fg_psy);
-		break;
 	case POWER_SUPPLY_PROP_TEMP:
 		bq->fake_temp = val->intval;
 		break;
@@ -1769,7 +1760,6 @@ static int fg_prop_is_writeable(struct power_supply *psy,
 	int ret;
 
 	switch (prop) {
-	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
 	case POWER_SUPPLY_PROP_TEMP:
 	case POWER_SUPPLY_PROP_CAPACITY:
 	case POWER_SUPPLY_PROP_UPDATE_NOW:
@@ -2809,7 +2799,6 @@ static int bq_fg_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, bq);
 
 	bq_parse_dt(bq);
-	bq->batt_dc_orig = bq->batt_dc;
 
 	bq->regmap = devm_regmap_init_i2c(client, &i2c_bq27z561_regmap_config);
 	if (!bq->regmap)

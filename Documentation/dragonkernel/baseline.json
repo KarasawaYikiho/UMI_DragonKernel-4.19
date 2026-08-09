@@ -7,23 +7,28 @@
     "devices": [
       {
         "codename": "umi",
-        "config": "arch/arm64/configs/vendor/xiaomi/umi.config"
+        "config": "arch/arm64/configs/vendor/xiaomi/umi.config",
+        "battery_capacity_mah": 4780
       },
       {
         "codename": "cmi",
-        "config": "arch/arm64/configs/vendor/xiaomi/cmi.config"
+        "config": "arch/arm64/configs/vendor/xiaomi/cmi.config",
+        "battery_capacity_mah": 4500
       },
       {
         "codename": "cas",
-        "config": "arch/arm64/configs/vendor/xiaomi/cas.config"
+        "config": "arch/arm64/configs/vendor/xiaomi/cas.config",
+        "battery_capacity_mah": 4500
       },
       {
         "codename": "thyme",
-        "config": "arch/arm64/configs/vendor/xiaomi/thyme.config"
+        "config": "arch/arm64/configs/vendor/xiaomi/thyme.config",
+        "battery_capacity_mah": 4780
       },
       {
         "codename": "apollo",
-        "config": "arch/arm64/configs/vendor/xiaomi/apollo.config"
+        "config": "arch/arm64/configs/vendor/xiaomi/apollo.config",
+        "battery_capacity_mah": 5000
       }
     ]
   },

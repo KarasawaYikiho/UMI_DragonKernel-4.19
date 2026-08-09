@@ -2,13 +2,13 @@
 
 ## 设备
 
-| 设备 | 配置 |
-|---|---|
-| `umi` | `arch/arm64/configs/vendor/xiaomi/umi.config` |
-| `cmi` | `arch/arm64/configs/vendor/xiaomi/cmi.config` |
-| `cas` | `arch/arm64/configs/vendor/xiaomi/cas.config` |
-| `thyme` | `arch/arm64/configs/vendor/xiaomi/thyme.config` |
-| `apollo` | `arch/arm64/configs/vendor/xiaomi/apollo.config` |
+| 设备 | 配置 | 启动容量 |
+|---|---|---:|
+| `umi` | `arch/arm64/configs/vendor/xiaomi/umi.config` | 4780 mAh |
+| `cmi` | `arch/arm64/configs/vendor/xiaomi/cmi.config` | 4500 mAh |
+| `cas` | `arch/arm64/configs/vendor/xiaomi/cas.config` | 4500 mAh（双电芯合计） |
+| `thyme` | `arch/arm64/configs/vendor/xiaomi/thyme.config` | 4780 mAh |
+| `apollo` | `arch/arm64/configs/vendor/xiaomi/apollo.config` | 5000 mAh |
 
 共同基线：ARM64 / Qualcomm Kona、Linux `4.19.325`、4 KiB page、Android Clang `r416183b`。每台设备必须使用自己的配置、设备树和 boot 模板。
 
@@ -32,6 +32,6 @@
 4. 固定 ROM、温度、电量、动画、后台进程和操作脚本，执行同机 A/B。
 5. 覆盖桌面冷/热启动、滑页、组件、文件夹、最近任务、应用启动、手势回桌面，以及澎湃超级岛展开、收起、动画和连续状态更新。
 6. 记录帧时间 P50/P95/P99、卡顿、输入延迟、CPU 频率/驻留、唤醒/迁移、内存 PSI、温度、功耗和稳定性。
-7. 电池容量从原厂设计值逐级调整，确认重启恢复原值且充电电压、电流、认证和温度保护不变。
+7. 核对启动设计容量符合型号；使用对应扩容电池完成学习周期，确认学习容量/FCC 可超过原厂值，且无需写入设计容量，充电电压、电流、认证和温度保护不变。
 
 任何温度、功耗、后台负载、硬件功能或稳定性回退都阻止进入 Root 变体和 Release。
