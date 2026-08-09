@@ -24,12 +24,14 @@ jobs:
     timeout-minutes: 90
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
-      OUT_ROOT: ${{ runner.temp }}/dragonkernel-out
-      USE_CCACHE: 1
+      USE_CCACHE: "1"
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
+
+      - name: Set output directory
+        run: echo "OUT_ROOT=$RUNNER_TEMP/dragonkernel-out" >> "$GITHUB_ENV"
 
       - name: Install build dependencies
         run: bash scripts/dragonkernel/bootstrap_wsl.sh
