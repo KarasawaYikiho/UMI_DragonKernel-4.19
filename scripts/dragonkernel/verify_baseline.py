@@ -207,4 +207,35 @@ if avbtool != {
 }:
     fail("unexpected avbtool lock")
 
+thermal_sources = {
+    "drivers/thermal/thermal_core.c": ("thermal_message", "thermal-message"),
+    "drivers/thermal/cpu_cooling.c": ("cpu_limits_set_level",),
+    "include/linux/cpu_cooling.h": ("cpu_limits_set_level",),
+    "arch/arm64/boot/dts/vendor/qcom/xiaomi-sm8250-common.dtsi": (
+        "thermal-message",
+    ),
+}
+for path, forbidden in thermal_sources.items():
+    source = (ROOT / path).read_text(encoding="utf-8")
+    for token in forbidden:
+        if token in source:
+            fail(f"Xiaomi thermal userspace control remains in {path}")
+
+battery_sources = (
+    "drivers/power/supply/qcom/qpnp-fg-gen4.c",
+    "drivers/power/supply/qcom/bq27z561_fg.c",
+    "drivers/power/supply/qcom_cas/bq27z561_fg.c",
+)
+for path in battery_sources:
+    source = (ROOT / path).read_text(encoding="utf-8")
+    if source.count("case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:") < 3:
+        fail(f"battery design capacity override is incomplete in {path}")
+
+fast_workflow = ".github/workflows/fast-validation.yml"
+if fast_workflow not in tracked:
+    fail("missing targeted fast validation workflow")
+fast_source = (ROOT / fast_workflow).read_text(encoding="utf-8")
+if "actions/cache@v5" not in fast_source or "USE_CCACHE: 1" not in fast_source:
+    fail("targeted fast validation must use the compiler cache")
+
 print(f"DragonKernel baseline OK: {len(devices)} devices / kernel {actual}")

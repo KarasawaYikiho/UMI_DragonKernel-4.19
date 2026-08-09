@@ -4,10 +4,26 @@ on:
   push:
     paths:
       - ".github/workflows/original-validation.yml"
-      - "arch/arm64/configs/vendor/**"
+      - "arch/**"
+      - "block/**"
+      - "certs/**"
+      - "crypto/**"
       - "drivers/**"
+      - "fs/**"
+      - "include/**"
+      - "init/**"
+      - "ipc/**"
+      - "kernel/**"
+      - "lib/**"
+      - "mm/**"
+      - "net/**"
+      - "security/**"
+      - "sound/**"
+      - "virt/**"
       - "scripts/dragonkernel/**"
       - "Documentation/dragonkernel/baseline.json"
+      - "Kconfig"
+      - "Makefile"
   workflow_dispatch:
   workflow_call:
 
@@ -47,6 +63,7 @@ jobs:
           name: original-${{ matrix.device }}-${{ github.sha }}
           path: |
             ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/.config
+            ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/include/config/kernel.release
             ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/SHA256SUMS
             ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/build.log
             ${{ env.OUT_ROOT }}/original/${{ matrix.device }}/arch/arm64/boot/Image

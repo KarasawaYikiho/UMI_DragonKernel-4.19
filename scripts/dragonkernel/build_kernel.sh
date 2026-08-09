@@ -70,6 +70,15 @@ KBUILD_BUILD_TIMESTAMP=$(git -C "$root" show -s --format=%cD HEAD)
 make_args=(-C "$root" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1
   LOCALVERSION="-DK-$local_suffix-$device")
 
+if [[ "${USE_CCACHE:-0}" == 1 ]]; then
+  command -v ccache >/dev/null
+  export CCACHE_BASEDIR="$root"
+  export CCACHE_COMPILERCHECK=content
+  export CCACHE_DIR=${CCACHE_DIR:-"$HOME/.cache/ccache"}
+  ccache --max-size "${CCACHE_MAXSIZE:-1G}" >/dev/null
+  make_args+=("CC=ccache clang" "HOSTCC=ccache clang")
+fi
+
 echo "variant=$variant"
 echo "device=$device"
 echo "kernel_commit=$(git -C "$root" rev-parse HEAD)"
@@ -80,7 +89,9 @@ make "${make_args[@]}" "${config_targets[@]}" olddefconfig
 make -j"$jobs" "${make_args[@]}" Image dtbs modules
 
 image="$out/arch/arm64/boot/Image"
+kernel_release="$out/include/config/kernel.release"
 test -s "$image"
+test -s "$kernel_release"
 mapfile -d '' dtbs < <(find "$out/arch/arm64/boot/dts" -type f -name '*.dtb' -print0 | sort -z)
 mapfile -d '' dtbos < <(find "$out/arch/arm64/boot/dts" -type f -name '*.dtbo' -print0 | sort -z)
 mapfile -d '' modules < <(find "$out" -type f -name '*.ko' -print0 | sort -z)
@@ -116,5 +127,5 @@ else
   ! grep -Eq '^CONFIG_(KSU|KPM|KSU_SUSFS)=y$' "$out/.config"
 fi
 
-sha256sum "$out/.config" "$image" "${dtbs[@]}" "${dtbos[@]}" "${modules[@]}" > "$out/SHA256SUMS"
+sha256sum "$out/.config" "$kernel_release" "$image" "${dtbs[@]}" "${dtbos[@]}" "${modules[@]}" > "$out/SHA256SUMS"
 echo "built Image, ${#dtbs[@]} DTBs, ${#dtbos[@]} DTBOs and ${#modules[@]} modules"

@@ -4,12 +4,28 @@ on:
   push:
     paths:
       - ".github/workflows/sukisu-validation.yml"
-      - "arch/arm64/configs/vendor/**"
+      - "arch/**"
+      - "block/**"
+      - "certs/**"
+      - "crypto/**"
       - "drivers/**"
+      - "fs/**"
+      - "include/**"
+      - "init/**"
+      - "ipc/**"
+      - "kernel/**"
+      - "lib/**"
+      - "mm/**"
+      - "net/**"
+      - "security/**"
+      - "sound/**"
+      - "virt/**"
       - "patches/sukisu/**"
       - "patches/susfs/kernel-4.19.patch"
       - "scripts/dragonkernel/**"
       - "Documentation/dragonkernel/baseline.json"
+      - "Kconfig"
+      - "Makefile"
   workflow_dispatch:
   workflow_call:
 
@@ -52,6 +68,7 @@ jobs:
           name: sukisu-${{ matrix.device }}-${{ github.sha }}
           path: |
             ${{ env.OUT_ROOT }}/sukisu/${{ matrix.device }}/.config
+            ${{ env.OUT_ROOT }}/sukisu/${{ matrix.device }}/include/config/kernel.release
             ${{ env.OUT_ROOT }}/sukisu/${{ matrix.device }}/SHA256SUMS
             ${{ env.OUT_ROOT }}/sukisu/${{ matrix.device }}/build.log
             ${{ env.OUT_ROOT }}/sukisu/${{ matrix.device }}/arch/arm64/boot/Image

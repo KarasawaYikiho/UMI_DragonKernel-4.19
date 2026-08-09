@@ -27,6 +27,14 @@ boot header、分区尺寸、DTB/DTBO、ramdisk 和 AVB 参数必须从目标设
 
 所有输入均受 [私密输入规则](PRIVATE_INPUTS.md) 约束。
 
+## ROM 适配流程
+
+- 通过 `prepare_rom_boot.sh` 从本地 ROM 包提取私有 boot 模板，不记录输入身份、路径、版本、哈希或归档清单。
+- 下载目标提交的 Actions Artifact 后，通过 `validate_rom_artifact.sh` 将对应设备的 `Image` 写入该模板。
+- 重打包必须保留 ROM 原有 ramdisk、boot 头部和 AVB 参数，并通过内核回读与分区尺寸检查。
+- stock DTBO、vendor_boot 和 vendor_dlkm 默认保持不变；只有取得明确的设备树或模块 ABI 证据后才允许替换。
+- 结构校验不能代替启动、硬件、系统桌面、澎湃超级岛、温控和电池实机验证。
+
 ## 刷写门禁
 
 实机验证统一安排在优化作业完成后，使用最终 Original CI 产物执行。
@@ -35,6 +43,7 @@ boot header、分区尺寸、DTB/DTBO、ramdisk 和 AVB 参数必须从目标设
 - 优先使用临时启动；完整通过后才允许写入分区。
 - 保留已验证的恢复镜像、校验和与恢复命令。
 - 回归解密、触摸、指纹、相机、音频、通信、无线、充电、温控、待机和重启。
+- 解容验证从原厂设计容量开始，逐级写入目标容量；确认重启恢复原厂值，且不得改变充电电压、电流、认证和温度保护。
 
 ## 系统交互性能基线
 

@@ -4,11 +4,27 @@ on:
   push:
     paths:
       - ".github/workflows/kernelsu-validation.yml"
-      - "arch/arm64/configs/vendor/**"
+      - "arch/**"
+      - "block/**"
+      - "certs/**"
+      - "crypto/**"
       - "drivers/**"
+      - "fs/**"
+      - "include/**"
+      - "init/**"
+      - "ipc/**"
+      - "kernel/**"
+      - "lib/**"
+      - "mm/**"
+      - "net/**"
+      - "security/**"
+      - "sound/**"
+      - "virt/**"
       - "patches/susfs/**"
       - "scripts/dragonkernel/**"
       - "Documentation/dragonkernel/baseline.json"
+      - "Kconfig"
+      - "Makefile"
   workflow_dispatch:
   workflow_call:
 
@@ -51,6 +67,7 @@ jobs:
           name: kernelsu-${{ matrix.device }}-${{ github.sha }}
           path: |
             ${{ env.OUT_ROOT }}/kernelsu/${{ matrix.device }}/.config
+            ${{ env.OUT_ROOT }}/kernelsu/${{ matrix.device }}/include/config/kernel.release
             ${{ env.OUT_ROOT }}/kernelsu/${{ matrix.device }}/SHA256SUMS
             ${{ env.OUT_ROOT }}/kernelsu/${{ matrix.device }}/build.log
             ${{ env.OUT_ROOT }}/kernelsu/${{ matrix.device }}/arch/arm64/boot/Image

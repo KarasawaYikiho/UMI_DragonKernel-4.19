@@ -1,0 +1,78 @@
+name: Fast targeted validation build
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: Device
+        required: true
+        type: choice
+        options: [umi, cmi, cas, thyme, apollo]
+      variant:
+        description: Kernel variant
+        required: true
+        type: choice
+        options: [original, kernelsu, sukisu]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: fast-${{ inputs.variant }}-${{ inputs.device }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      OUT_ROOT: ${{ runner.temp }}/dragonkernel-out
+      USE_CCACHE: 1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: bash scripts/dragonkernel/bootstrap_wsl.sh
+
+      - name: Fetch locked toolchain
+        shell: bash
+        run: scripts/dragonkernel/prepare_toolchain.sh "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Restore compiler cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: dragonkernel-ccache-v1-${{ runner.os }}-${{ inputs.variant }}-${{ inputs.device }}-${{ github.sha }}
+          restore-keys: |
+            dragonkernel-ccache-v1-${{ runner.os }}-${{ inputs.variant }}-${{ inputs.device }}-
+
+      - name: Prepare selected Root integration
+        if: inputs.variant != 'original'
+        shell: bash
+        run: |
+          if [[ "${{ inputs.variant }}" == kernelsu ]]; then
+            scripts/dragonkernel/prepare_susfs.sh
+          else
+            scripts/dragonkernel/prepare_sukisu.sh
+          fi
+
+      - name: Build selected kernel
+        run: scripts/dragonkernel/build_kernel.sh "${{ inputs.variant }}" "${{ inputs.device }}"
+
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: fast-${{ inputs.variant }}-${{ inputs.device }}-${{ github.sha }}
+          path: |
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/.config
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/include/config/kernel.release
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/SHA256SUMS
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/build.log
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/arch/arm64/boot/Image
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/arch/arm64/boot/dts/**/*.dtb
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/arch/arm64/boot/dts/**/*.dtbo
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/**/*.ko
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

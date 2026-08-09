@@ -14,6 +14,7 @@
 - 路径只通过参数或环境变量传入，禁止写入源码。
 - 本地输出只用于测试，不得上传 Releases。
 - 日志只记录通用步骤和结果，不记录输入身份或内容清单。
+- ROM 包使用 `prepare_rom_boot.sh <本地输入> <设备>` 写入忽略目录；Actions Artifact 使用 `validate_rom_artifact.sh <设备> <Artifact 目录> <本地输出>` 校验，不上传模板或重打包结果。
 
 ## CI 处理
 

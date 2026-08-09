@@ -22,7 +22,9 @@ jobs:
         scripts/dragonkernel/prepare_sukisu.sh
         scripts/dragonkernel/prepare_avbtool.sh
         scripts/dragonkernel/prepare_magiskboot.sh
+        scripts/dragonkernel/prepare_rom_boot.sh
         scripts/dragonkernel/repack_boot.sh
+        scripts/dragonkernel/validate_rom_artifact.sh
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,6 +37,14 @@ jobs:
             patches/sukisu
             Makefile
             arch/arm64/configs/vendor
+            arch/arm64/boot/dts/vendor/qcom/xiaomi-sm8250-common.dtsi
+            drivers/power/supply/qcom/bq27z561_fg.c
+            drivers/power/supply/qcom/fg-core.h
+            drivers/power/supply/qcom/qpnp-fg-gen4.c
+            drivers/power/supply/qcom_cas/bq27z561_fg.c
+            drivers/thermal/cpu_cooling.c
+            drivers/thermal/thermal_core.c
+            include/linux/cpu_cooling.h
           sparse-checkout-cone-mode: false
       - run: python3 scripts/dragonkernel/verify_baseline.py
       - run: python3 scripts/dragonkernel/release_name.py --self-test
