@@ -58,6 +58,7 @@ elif [[ "$variant" == sukisu ]]; then
 fi
 
 mkdir -p "$out"
+exec > >(tee "$out/build.log") 2>&1
 export PATH="$toolchain_dir/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export ARCH=arm64
 export SUBARCH=arm64
@@ -69,49 +70,49 @@ KBUILD_BUILD_TIMESTAMP=$(git -C "$root" show -s --format=%cD HEAD)
 make_args=(-C "$root" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1
   LOCALVERSION="-DK-$local_suffix-$device")
 
-{
-  echo "variant=$variant"
-  echo "device=$device"
-  echo "kernel_commit=$(git -C "$root" rev-parse HEAD)"
-  echo "toolchain_commit=$toolchain_commit"
-  clang --version | head -2
+echo "variant=$variant"
+echo "device=$device"
+echo "kernel_commit=$(git -C "$root" rev-parse HEAD)"
+echo "toolchain_commit=$toolchain_commit"
+clang --version | head -2
 
-  make "${make_args[@]}" "${config_targets[@]}" olddefconfig
-  make -j"$jobs" "${make_args[@]}" Image dtbs modules
+make "${make_args[@]}" "${config_targets[@]}" olddefconfig
+make -j"$jobs" "${make_args[@]}" Image dtbs modules
 
-  image="$out/arch/arm64/boot/Image"
-  test -s "$image"
-  mapfile -d '' dtbs < <(find "$out/arch/arm64/boot/dts" -type f -name '*.dtb' -print0 | sort -z)
-  mapfile -d '' dtbos < <(find "$out/arch/arm64/boot/dts" -type f -name '*.dtbo' -print0 | sort -z)
-  mapfile -d '' modules < <(find "$out" -type f -name '*.ko' -print0 | sort -z)
-  ((${#dtbs[@]} > 0))
-  ((${#dtbos[@]} > 0))
-  ((${#modules[@]} > 0))
+image="$out/arch/arm64/boot/Image"
+test -s "$image"
+mapfile -d '' dtbs < <(find "$out/arch/arm64/boot/dts" -type f -name '*.dtb' -print0 | sort -z)
+mapfile -d '' dtbos < <(find "$out/arch/arm64/boot/dts" -type f -name '*.dtbo' -print0 | sort -z)
+mapfile -d '' modules < <(find "$out" -type f -name '*.ko' -print0 | sort -z)
+((${#dtbs[@]} > 0))
+((${#dtbos[@]} > 0))
+((${#modules[@]} > 0))
 
-  if [[ "$variant" == kernelsu ]]; then
-    grep -qx 'CONFIG_KSU=y' "$out/.config"
-    grep -qx 'CONFIG_KPROBES=y' "$out/.config"
-    grep -qx 'CONFIG_KSU_SUSFS=y' "$out/.config"
-    grep -qx '# CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT is not set' "$out/.config"
-    grep -qx 'CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y' "$out/.config"
-    grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
-    grep -q ' ksu_kernelsu_init$' "$out/System.map"
-    grep -q ' susfs_init$' "$out/System.map"
-  elif [[ "$variant" == sukisu ]]; then
-    grep -qx 'CONFIG_DRAGONKERNEL_SUKISU=y' "$out/.config"
-    grep -qx 'CONFIG_KSU=y' "$out/.config"
-    grep -qx 'CONFIG_KPM=y' "$out/.config"
-    grep -qx 'CONFIG_KALLSYMS_ALL=y' "$out/.config"
-    grep -qx 'CONFIG_KSU_SUSFS=y' "$out/.config"
-    grep -qx 'CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y' "$out/.config"
-    grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
-    grep -q ' kernelsu_init$' "$out/System.map"
-    grep -q ' susfs_init$' "$out/System.map"
-    grep -q ' ksu_susfs_handle_command$' "$out/System.map"
-  else
-    ! grep -q '^CONFIG_KSU=' "$out/.config"
-  fi
+if [[ "$variant" == kernelsu ]]; then
+  grep -qx 'CONFIG_DRAGONKERNEL_KERNELSU=y' "$out/.config"
+  grep -qx 'CONFIG_KSU=y' "$out/.config"
+  grep -qx 'CONFIG_KPROBES=y' "$out/.config"
+  grep -qx 'CONFIG_KSU_SUSFS=y' "$out/.config"
+  grep -qx '# CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT is not set' "$out/.config"
+  grep -qx 'CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y' "$out/.config"
+  grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
+  grep -q ' ksu_kernelsu_init$' "$out/System.map"
+  grep -q ' susfs_init$' "$out/System.map"
+elif [[ "$variant" == sukisu ]]; then
+  grep -qx 'CONFIG_DRAGONKERNEL_SUKISU=y' "$out/.config"
+  grep -qx 'CONFIG_KSU=y' "$out/.config"
+  grep -qx 'CONFIG_KPM=y' "$out/.config"
+  grep -qx 'CONFIG_KALLSYMS_ALL=y' "$out/.config"
+  grep -qx 'CONFIG_KSU_SUSFS=y' "$out/.config"
+  grep -qx 'CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y' "$out/.config"
+  grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
+  grep -q ' kernelsu_init$' "$out/System.map"
+  grep -q ' susfs_init$' "$out/System.map"
+  grep -q ' ksu_susfs_handle_command$' "$out/System.map"
+else
+  grep -qx 'CONFIG_DRAGONKERNEL_ROOT_NONE=y' "$out/.config"
+  ! grep -Eq '^CONFIG_(KSU|KPM|KSU_SUSFS)=y$' "$out/.config"
+fi
 
-  sha256sum "$out/.config" "$image" "${dtbs[@]}" "${dtbos[@]}" "${modules[@]}" > "$out/SHA256SUMS"
-  echo "built Image, ${#dtbs[@]} DTBs, ${#dtbos[@]} DTBOs and ${#modules[@]} modules"
-} 2>&1 | tee "$out/build.log"
+sha256sum "$out/.config" "$image" "${dtbs[@]}" "${dtbos[@]}" "${modules[@]}" > "$out/SHA256SUMS"
+echo "built Image, ${#dtbs[@]} DTBs, ${#dtbos[@]} DTBOs and ${#modules[@]} modules"

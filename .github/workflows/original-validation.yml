@@ -1,6 +1,13 @@
 name: Original validation build
 
 on:
+  push:
+    paths:
+      - ".github/workflows/original-validation.yml"
+      - "arch/arm64/configs/vendor/**"
+      - "drivers/**"
+      - "scripts/dragonkernel/**"
+      - "Documentation/dragonkernel/baseline.json"
   workflow_dispatch:
   workflow_call:
 

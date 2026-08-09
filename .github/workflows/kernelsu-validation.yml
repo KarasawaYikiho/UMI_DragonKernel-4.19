@@ -1,6 +1,14 @@
 name: KernelSU validation build
 
 on:
+  push:
+    paths:
+      - ".github/workflows/kernelsu-validation.yml"
+      - "arch/arm64/configs/vendor/**"
+      - "drivers/**"
+      - "patches/susfs/**"
+      - "scripts/dragonkernel/**"
+      - "Documentation/dragonkernel/baseline.json"
   workflow_dispatch:
   workflow_call:
 
