@@ -12,7 +12,7 @@
 
 ## 状态
 
-提交 `c64df02c1` 的五台设备 Original、KernelSU + SUSFS 及 SukiSU + KPM + SUSFS 已通过 GitHub Actions 矩阵构建，15 份 Artifact 的变体配置、设备配置和校验和均已复核。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、Root 隐藏、硬件、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+提交 `7afcf05a0983` 已为五台设备启用 UCLAMP 任务与 cgroup 调度接口；Original、KernelSU + SUSFS 及 SukiSU + KPM + SUSFS 的 15 个 GitHub Actions 任务全部构建通过，三种变体的代表性 Artifact 已复核配置和校验和。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、Root 隐藏、硬件、性能、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
 
 ## 构建边界
 

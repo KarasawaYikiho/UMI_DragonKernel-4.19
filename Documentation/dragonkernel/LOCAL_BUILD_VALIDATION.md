@@ -21,6 +21,8 @@
 
 提交 `ce0897b86aa38138761211dde7f91f4325d18005` 的历史 Original Artifact 因误启用 `CONFIG_KSU=y` 已作废。提交 `c64df02c1c7fbe76c339d50803f8ef40d4cac2c5` 修正失败传播与 Root 选择门禁后，Original、KernelSU + SUSFS、SukiSU + KPM + SUSFS 五设备矩阵均通过，运行编号分别为 `31317137033`、`31317137024`、`31317137030`；Project contract 运行 `31317137036` 通过。下载复核的 15 份 Artifact 均包含 3 个 DTB、12 个 DTBO 和 3 个模块，设备配置、变体配置与全部 `SHA256SUMS` 一致。
 
+提交 `7afcf05a0983a3c14b964b302ef497a6153ccd34` 启用 `CONFIG_UCLAMP_TASK=y` 与 `CONFIG_UCLAMP_TASK_GROUP=y` 后，Original、KernelSU、SukiSU 五设备矩阵再次全部通过，运行编号分别为 `31321884794`、`31321884790`、`31321884791`；Project contract 运行 `31321884800` 通过。三种变体的 `cmi` Artifact 已下载复核，UCLAMP、设备与 Root 选择配置正确，结构和全部 `SHA256SUMS` 一致。
+
 本地 boot 重打包已验证模板无修改往返、内核替换回读、分区尺寸限制和 AVB 摘要。该结果只证明镜像结构有效，不证明设备可启动。
 
 ## KernelSU 结果
