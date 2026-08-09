@@ -26,9 +26,9 @@ actual_kernelsu_hash=$(sha256sum "$kernelsu_patch" | cut -d' ' -f1)
 
 git -C "$root" diff --quiet -- arch fs include kernel
 git -C "$root/drivers/kernelsu" diff --quiet
-git -C "$root" apply --check "$kernel_patch"
+git -C "$root" apply --check --exclude=arch/arm64/configs/vendor/dragonkernel-kernelsu.config "$kernel_patch"
 git -C "$root/drivers/kernelsu" apply --check "$kernelsu_patch"
-git -C "$root" apply "$kernel_patch"
+git -C "$root" apply --exclude=arch/arm64/configs/vendor/dragonkernel-kernelsu.config "$kernel_patch"
 git -C "$root/drivers/kernelsu" apply "$kernelsu_patch"
 
 echo "SUSFS 4.19 patches applied"
