@@ -19,7 +19,7 @@
 | `thyme` | 55,566,352 | `3d96f322c84a381c09011bbd8d160315d8e205f136f2b6adc37ca4270e3f8ba7` | 3 | 12 | 3 |
 | `apollo` | 53,471,248 | `ca3152cb436fb21787fa472d206cec6c5b48166f6d4b2add536d6c6e17a6e2c8` | 3 | 12 | 3 |
 
-提交 `ce0897b86aa38138761211dde7f91f4325d18005` 的 Original 与 KernelSU 工作流曾分别完成五设备构建。后续 Artifact 复核发现五份 Original `.config` 均误启用 `CONFIG_KSU=y`，因此该组 Original 结果已作废；Original 必须在修正后的失败传播与 Root 选择门禁重新构建。
+提交 `ce0897b86aa38138761211dde7f91f4325d18005` 的历史 Original Artifact 因误启用 `CONFIG_KSU=y` 已作废。提交 `c64df02c1c7fbe76c339d50803f8ef40d4cac2c5` 修正失败传播与 Root 选择门禁后，Original、KernelSU + SUSFS、SukiSU + KPM + SUSFS 五设备矩阵均通过，运行编号分别为 `31317137033`、`31317137024`、`31317137030`；Project contract 运行 `31317137036` 通过。下载复核的 15 份 Artifact 均包含 3 个 DTB、12 个 DTBO 和 3 个模块，设备配置、变体配置与全部 `SHA256SUMS` 一致。
 
 本地 boot 重打包已验证模板无修改往返、内核替换回读、分区尺寸限制和 AVB 摘要。该结果只证明镜像结构有效，不证明设备可启动。
 
