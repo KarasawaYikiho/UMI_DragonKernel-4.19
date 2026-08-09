@@ -98,8 +98,12 @@ static ssize_t store_input_boost_freq(struct kobject *kobj,
 			return -EINVAL;
 
 		per_cpu(sync_info, cpu).input_boost_freq = val;
-		cp = strnchr(cp, PAGE_SIZE - (cp - buf), ' ');
-		cp++;
+		if (i + 2 < ntokens) {
+			cp = strnchr(cp, count - (cp - buf), ' ');
+			if (!cp)
+				return -EINVAL;
+			cp++;
+		}
 	}
 
 check_enable:
