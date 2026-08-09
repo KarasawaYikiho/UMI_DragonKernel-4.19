@@ -1,46 +1,39 @@
 # UMI DragonKernel 4.19
 
-面向小米 SM8250 设备和 Android 15 / HyperOS 3 的 4.19 下游内核。项目以 LineageOS SM8250 内核为主线，按需移植小米官方驱动与修复。
+面向小米 SM8250 设备的 Linux 4.19 内核，目标系统为 Android 15 / HyperOS 3。主线基于 LineageOS SM8250；小米代码只按子系统审查后移植。
 
-## 范围
+## 支持范围
 
 - 设备：`umi`、`cmi`、`cas`、`thyme`、`apollo`
-- 内核：4.19.325
-- 变体：Original、Magisk、KernelSU、SukiSU + KPM + SUSFS
-- Root 变体必须通过内核、管理器与应用检测三层隐藏验证。
-- 公共安全能力：BBG，通过独立兼容性和真机测试后启用
+- 内核：`4.19.325`
+- 已构建变体：Original、KernelSU + SUSFS、SukiSU + KPM + SUSFS
+- 待验证变体：Magisk、BBG
 
-## 状态
+## 当前实现
 
-提交 `7afcf05a0983` 已为五台设备启用 UCLAMP 任务与 cgroup 调度接口；Original、KernelSU + SUSFS 及 SukiSU + KPM + SUSFS 的 15 个 GitHub Actions 任务全部构建通过，三种变体的代表性 Artifact 已复核配置和校验和。本地 boot 重打包已通过内核回读、尺寸和 AVB 校验。启动、Root 隐藏、硬件、性能、功耗及刷写兼容性尚未验证，因此当前产物不可作为正式刷机包发布。
+- 保留 WALT、schedutil、UCLAMP、前台 Binder 调度、输入 boost、PSI、zram、BFQ、F2FS 与 Qualcomm 硬件温控链。
+- 删除 Xiaomi `thermal_message` 用户态云控邮箱；保留 TSENS、BCL、LMH、标准 thermal zone 和硬件过热保护。
+- 三条电量计驱动均支持 root 按次启动设置设计容量，范围为原厂值至 2 倍；重启或配置重载恢复原厂值，不修改充电电压、电流、认证或温度保护。
+- 提供单设备、单变体、带 ccache 的 Actions 快速构建，以及使用私有 ROM `boot.img` 模板的本地结构适配检查。
 
-## 构建边界
+## 验证状态
 
-- 本机构建仅在 WSL 2 的 ext4 文件系统中执行，用于开发和验证。
-- Releases 只能由 GitHub Actions 从干净提交编译、校验、打包并发布。
-- 本机产物和 Actions 验证 Artifact 不得转存为 Release 资产。
-- 私密输入及其可识别元数据不得进入 Git、公开日志、缓存或 Release 说明。
+内核源码快照 `79f39ca6c10e` 已通过 Original、KernelSU、SukiSU 三个五设备 Actions 矩阵，共 15 个构建。Original 的 FG Gen4、单电芯 BQ、双电芯 BQ 代表产物已通过外层与内部 SHA-256、配置和构建日志复核。
 
-## 命令
+以上只证明源码可构建和产物结构有效，不证明可启动、ROM 完全兼容、Root 隐藏、性能、温控、功耗或稳定性。实机 A/B 必须在优化作业完成后进行。
 
-```bash
-git submodule update --init --recursive
-bash scripts/dragonkernel/bootstrap_wsl.sh
-python3 scripts/dragonkernel/verify_baseline.py
-scripts/dragonkernel/build_original.sh umi
-scripts/dragonkernel/prepare_susfs.sh
-scripts/dragonkernel/build_kernelsu.sh umi
-scripts/dragonkernel/prepare_sukisu.sh
-scripts/dragonkernel/build_sukisu.sh umi
-```
+## 工作流
+
+- 完整门禁：推送相关源码后自动构建三个变体的五设备矩阵。
+- 快速验证：在 Actions 手动选择一个设备和一个变体，复用 ccache；不得替代完整门禁。
+- ROM 适配：私有 ROM 只在本地提取 boot 模板；不得上传输入、模板、日志或可识别元数据。
+- 正式 Release：只能由 CI 从干净提交重新编译、打包、哈希和发布。
 
 ## 文档
 
-- [项目流程](Documentation/dragonkernel/PROJECT_PROCESS.md)
-- [功能矩阵](Documentation/dragonkernel/FEATURE_MATRIX.md)
-- [设备基线](Documentation/dragonkernel/DEVICE_BASELINE.md)
-- [本机构建记录](Documentation/dragonkernel/LOCAL_BUILD_VALIDATION.md)
-- [私密输入规则](Documentation/dragonkernel/PRIVATE_INPUTS.md)
+- [执行流程](Documentation/dragonkernel/PROJECT_PROCESS.md)
+- [功能状态](Documentation/dragonkernel/FEATURE_MATRIX.md)
+- [设备与 ROM 门禁](Documentation/dragonkernel/DEVICE_BASELINE.md)
+- [构建证据](Documentation/dragonkernel/LOCAL_BUILD_VALIDATION.md)
+- [私有输入规则](Documentation/dragonkernel/PRIVATE_INPUTS.md)
 - [机器可读基线](Documentation/dragonkernel/baseline.json)
-
-首次真机测试必须优先临时启动，并保留已验证的恢复路径。
