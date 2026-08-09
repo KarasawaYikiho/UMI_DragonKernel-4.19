@@ -9,7 +9,7 @@
 | Xiaomi `thermal_message` 云控邮箱移除 | 构建通过 | TSENS、BCL、LMH、充电和过热回归 |
 | 电池设计容量解容 | 构建通过 | 三类电量计逐级容量、重启恢复和充放电回归 |
 | 私有 ROM boot 结构适配工具 | 已实现 | 使用目标 ROM 与最终 Original Artifact 配对 |
-| 单设备/单变体 ccache 快速构建 | 构建通过 | 跨提交缓存复用和快速产物复核 |
+| 单设备/单变体 ccache 快速构建 | 构建通过 | 实际内核源码增量提交后的缓存复用 |
 | Original | 构建通过 | 五设备临时启动和硬件矩阵 |
 | KernelSU + SUSFS | 构建通过 | 启动、Root、管理器与应用检测 |
 | SukiSU + KPM + SUSFS | 构建通过 | 启动、Root、KPM、管理器与应用检测 |

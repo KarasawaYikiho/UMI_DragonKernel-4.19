@@ -12,6 +12,7 @@
 | SukiSU，五设备 | `31326103097` | 5/5 通过 |
 | Fast Original/umi，首次缓存 | `31326292031` | 通过 |
 | Fast Original/umi，缓存复用 | `31327568750` | 命中缓存并通过；总耗时由 23 分 35 秒降至 10 分 25 秒 |
+| Fast Original/umi，跨 SHA 复用 | `31328275207` | 从旧 SHA 的 restore key 恢复缓存并通过；总耗时 10 分 54 秒 |
 
 本轮未执行本地内核编译。
 
@@ -24,6 +25,7 @@
 | Original/cas | 双电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、设备配置和驱动对象通过；构建日志无错误 |
 | SukiSU/cmi | KSU、KPM、SUSFS、单电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、变体/设备配置和驱动对象通过；构建日志无错误 |
 | KernelSU/cas | KSU、SUSFS、双电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、变体/设备配置和驱动对象通过；构建日志无错误 |
+| Fast Original/umi | ccache 快速路径 | 外层 SHA-256、21 项内部摘要、Original/umi 配置、UCLAMP、温控和 FG Gen4 对象通过；构建日志无错误 |
 
 ## 尚未证明
 
