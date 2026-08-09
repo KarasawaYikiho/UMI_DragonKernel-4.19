@@ -1,18 +1,16 @@
 # 构建证据
 
-验证对象：内核源码快照 `79f39ca6c10e758c760a9eff682fc02866f17059`。
+验证对象：内核源码快照 `8b595e6296e675a7e5981b3b53463029e34678ae`。
 
 ## GitHub Actions
 
 | 工作流 | Run | 结果 |
 |---|---:|---|
-| Project contract | `31326103094` | 通过 |
-| Original，五设备 | `31326103076` | 5/5 通过 |
-| KernelSU，五设备 | `31326103078` | 5/5 通过 |
-| SukiSU，五设备 | `31326103097` | 5/5 通过 |
-| Fast Original/umi，首次缓存 | `31326292031` | 通过 |
-| Fast Original/umi，缓存复用 | `31327568750` | 命中缓存并通过；总耗时由 23 分 35 秒降至 10 分 25 秒 |
-| Fast Original/umi，跨 SHA 复用 | `31328275207` | 从旧 SHA 的 restore key 恢复缓存并通过；总耗时 10 分 54 秒 |
+| Project contract | `31330200810` | 通过 |
+| Original，五设备 | `31330200754` | 5/5 通过 |
+| KernelSU，五设备 | `31330200803` | 5/5 通过 |
+| SukiSU，五设备 | `31330200751` | 5/5 通过 |
+| Fast Original/umi | `31330211108` | 恢复 798 MB 跨 SHA 缓存并通过；总耗时 10 分 44 秒 |
 
 本轮未执行本地内核编译。
 
@@ -20,12 +18,12 @@
 
 | 产物 | 覆盖驱动 | 结果 |
 |---|---|---|
-| Original/umi | Qualcomm FG Gen4 | 外层 SHA-256、21 项内部摘要、设备配置、UCLAMP、温控和驱动对象通过；构建日志无错误 |
+| Original/umi | Qualcomm FG Gen4、容量学习 | 外层 SHA-256、21 项内部摘要、设备配置、UCLAMP 和两个驱动对象通过；构建日志无错误 |
 | Original/cmi | 单电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、设备配置和驱动对象通过；构建日志无错误 |
 | Original/cas | 双电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、设备配置和驱动对象通过；构建日志无错误 |
 | SukiSU/cmi | KSU、KPM、SUSFS、单电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、变体/设备配置和驱动对象通过；构建日志无错误 |
 | KernelSU/cas | KSU、SUSFS、双电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、变体/设备配置和驱动对象通过；构建日志无错误 |
-| Fast Original/umi | ccache 快速路径 | 外层 SHA-256、21 项内部摘要、Original/umi 配置、UCLAMP、温控和 FG Gen4 对象通过；构建日志无错误 |
+| Fast Original/umi | ccache 快速路径 | 外层 SHA-256、21 项内部摘要、Original/umi 配置、UCLAMP 和两个 FG 对象通过；构建日志无错误 |
 
 ## 尚未证明
 
