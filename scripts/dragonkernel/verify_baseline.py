@@ -235,7 +235,7 @@ fast_workflow = ".github/workflows/fast-validation.yml"
 if fast_workflow not in tracked:
     fail("missing targeted fast validation workflow")
 fast_source = (ROOT / fast_workflow).read_text(encoding="utf-8")
-if "actions/cache@v5" not in fast_source or "USE_CCACHE: 1" not in fast_source:
+if "actions/cache@v5" not in fast_source or 'USE_CCACHE: "1"' not in fast_source:
     fail("targeted fast validation must use the compiler cache")
 
 print(f"DragonKernel baseline OK: {len(devices)} devices / kernel {actual}")
