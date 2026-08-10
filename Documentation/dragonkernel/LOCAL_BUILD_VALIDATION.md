@@ -1,16 +1,15 @@
 # 构建证据
 
-验证对象：内核源码快照 `8b595e6296e675a7e5981b3b53463029e34678ae`。
+验证对象：`66cf9d14a610a751cdbef0068d75fc9e28692937`。
 
 ## GitHub Actions
 
 | 工作流 | Run | 结果 |
 |---|---:|---|
-| Project contract | `31330200810` | 通过 |
-| Original，五设备 | `31330200754` | 5/5 通过 |
-| KernelSU，五设备 | `31330200803` | 5/5 通过 |
-| SukiSU，五设备 | `31330200751` | 5/5 通过 |
-| Fast Original/umi | `31330211108` | 恢复 798 MB 跨 SHA 缓存并通过；总耗时 10 分 44 秒 |
+| Project contract | `31368012117` | 通过，含 Magisk ramdisk 状态自检 |
+| Original，五设备 | `31368012142` | 5/5 通过 |
+| KernelSU，五设备 | `31368012174` | 5/5 通过 |
+| SukiSU，五设备 | `31368012147` | 5/5 通过 |
 
 本轮未执行本地内核编译。
 
@@ -18,12 +17,14 @@
 
 | 产物 | 覆盖驱动 | 结果 |
 |---|---|---|
-| Original/umi | Qualcomm FG Gen4、容量学习 | 外层 SHA-256、21 项内部摘要、设备配置、UCLAMP 和两个驱动对象通过；构建日志无错误 |
+| Original/umi，`66cf9d14a610` | Qualcomm FG Gen4、容量学习、Magisk 内核来源 | 外层 SHA-256、21 项内部摘要、设备/Root-none/UCLAMP 配置和两个驱动对象通过；构建日志无错误 |
 | Original/cmi | 单电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、设备配置和驱动对象通过；构建日志无错误 |
 | Original/cas | 双电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、设备配置和驱动对象通过；构建日志无错误 |
 | SukiSU/cmi | KSU、KPM、SUSFS、单电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、变体/设备配置和驱动对象通过；构建日志无错误 |
 | KernelSU/cas | KSU、SUSFS、双电芯 BQ27Z561 | 外层 SHA-256、21 项内部摘要、变体/设备配置和驱动对象通过；构建日志无错误 |
-| Fast Original/umi | ccache 快速路径 | 外层 SHA-256、21 项内部摘要、Original/umi 配置、UCLAMP 和两个 FG 对象通过；构建日志无错误 |
+| Fast Original/umi，`8b595e6296e6` | ccache 快速路径 | 外层 SHA-256、21 项内部摘要、Original/umi 配置、UCLAMP 和两个 FG 对象通过；构建日志无错误 |
+
+其余表内代表产物来自内核源码相同的 `8b595e6296e6`；`66cf9d14a610` 只新增 Magisk 本地结构门禁和说明。
 
 ## 尚未证明
 

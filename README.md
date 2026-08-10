@@ -20,7 +20,7 @@
 
 ## 验证状态
 
-内核源码快照 `8b595e6296e6` 已通过 Original、KernelSU、SukiSU 三个五设备 Actions 矩阵，共 15 个构建。FG Gen4、单电芯 BQ、双电芯 BQ、两个 Root 变体和快速路径的代表产物已通过外层与内部 SHA-256、配置、驱动对象和构建日志复核。
+快照 `66cf9d14a610` 已通过 Project contract，以及 Original、KernelSU、SukiSU 三个五设备 Actions 矩阵，共 15 个构建。当前 Original/umi 与同内核源码的其余代表产物已通过外层和内部 SHA-256、配置、驱动对象与构建日志复核。
 
 以上只证明源码可构建和产物结构有效，不证明可启动、ROM 完全兼容、Root 隐藏、性能、温控、功耗或稳定性。实机 A/B 必须在优化作业完成后进行。
 
