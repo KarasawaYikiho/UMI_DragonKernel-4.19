@@ -370,4 +370,19 @@ fast_source = (ROOT / fast_workflow).read_text(encoding="utf-8")
 if "actions/cache@v5" not in fast_source or 'USE_CCACHE: "1"' not in fast_source:
     fail("targeted fast validation must use the compiler cache")
 
+build_source = (ROOT / "scripts/dragonkernel/build_kernel.sh").read_text(
+    encoding="utf-8"
+)
+if "SOURCE_DATE_EPOCH=$(git -C \"$root\" show -s --format=%ct HEAD)" not in build_source:
+    fail("kernel builds must use the commit epoch")
+
+kheaders_source = (ROOT / "kernel/gen_kheaders.sh").read_text(encoding="utf-8")
+for token in (
+    "--sort=name",
+    '--mtime="@${SOURCE_DATE_EPOCH:-0}"',
+    "--owner=0 --group=0 --numeric-owner",
+):
+    if token not in kheaders_source:
+        fail("embedded kernel headers must be reproducible")
+
 print(f"DragonKernel baseline OK: {len(devices)} devices / kernel {actual}")

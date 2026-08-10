@@ -54,6 +54,7 @@ jobs:
             drivers/thermal/cpu_cooling.c
             drivers/thermal/thermal_core.c
             include/linux/cpu_cooling.h
+            kernel/gen_kheaders.sh
           sparse-checkout-cone-mode: false
       - run: python3 scripts/dragonkernel/verify_baseline.py
       - run: python3 scripts/dragonkernel/release_name.py --self-test

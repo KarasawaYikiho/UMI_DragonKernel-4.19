@@ -76,6 +76,8 @@ export KBUILD_BUILD_USER=Karasawa
 export KBUILD_BUILD_HOST=DragonKernel-WSL
 export KBUILD_BUILD_TIMESTAMP
 KBUILD_BUILD_TIMESTAMP=$(git -C "$root" show -s --format=%cD HEAD)
+export SOURCE_DATE_EPOCH
+SOURCE_DATE_EPOCH=$(git -C "$root" show -s --format=%ct HEAD)
 
 make_args=(-C "$root" O="$out" ARCH=arm64 LLVM=1 LLVM_IAS=1
   LOCALVERSION="-DK-$local_suffix-$device")
