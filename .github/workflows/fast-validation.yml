@@ -74,7 +74,7 @@ jobs:
           python3 scripts/dragonkernel/package_anykernel.py \
             "${{ inputs.device }}" "${{ inputs.variant }}" \
             "$ANYKERNEL3_DIR" "$output" "$output/flashable-candidate.zip"
-          sha256sum "$output/flashable-candidate.zip" > "$output/flashable-candidate.zip.sha256"
+          (cd "$output" && sha256sum flashable-candidate.zip > flashable-candidate.zip.sha256)
 
       - name: Upload validation evidence
         uses: actions/upload-artifact@v7
