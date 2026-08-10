@@ -14,6 +14,8 @@
 
 Magisk 复用 Original 内核。目标设备先用 Magisk App 修补自身 ROM 镜像，本地门禁再替换内核并确认 ramdisk 未改变；禁止集中修补或共享已修补镜像。
 
+BBG 只作为默认关闭的 KernelSU + SUSFS 验证叠加层。启用时拦截 Root 派生上下文对关键分区和 boot 的写入，recovery 保护保持关闭；实机必须同时验证恶意写入被拒绝、正常系统更新不回退，以及 recovery/fastboot 可恢复。
+
 ## 优化边界
 
 - 只优化可复用的调度、频率、内存、I/O、网络和热管理机制。
