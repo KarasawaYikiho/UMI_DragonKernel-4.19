@@ -264,6 +264,9 @@ for token in (
 ):
     if token not in bbg_config:
         fail("BBG config contract changed")
+common_config = indexed_text("arch/arm64/configs/vendor/xiaomi/sm8250-common.config")
+if "# CONFIG_BBG is not set" not in common_config:
+    fail("BBG must remain disabled outside its explicit validation overlay")
 if 'obj-$(CONFIG_BBG)' not in indexed_text("drivers/Makefile"):
     fail("BBG build integration missing")
 if 'source "drivers/baseband-guard/Kconfig"' not in indexed_text("drivers/Kconfig"):
