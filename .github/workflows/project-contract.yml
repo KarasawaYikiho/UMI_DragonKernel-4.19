@@ -17,9 +17,11 @@ jobs:
         scripts/dragonkernel/build_original.sh
         scripts/dragonkernel/build_kernelsu.sh
         scripts/dragonkernel/build_sukisu.sh
+        scripts/dragonkernel/build_bbg.sh
         scripts/dragonkernel/prepare_toolchain.sh
         scripts/dragonkernel/prepare_susfs.sh
         scripts/dragonkernel/prepare_sukisu.sh
+        scripts/dragonkernel/prepare_bbg.sh
         scripts/dragonkernel/prepare_avbtool.sh
         scripts/dragonkernel/prepare_magiskboot.sh
         scripts/dragonkernel/prepare_rom_boot.sh
@@ -36,6 +38,7 @@ jobs:
             scripts/dragonkernel
             patches/susfs
             patches/sukisu
+            patches/bbg
             Makefile
             arch/arm64/configs/vendor
             arch/arm64/boot/dts/vendor/qcom/xiaomi-sm8250-common.dtsi
@@ -43,6 +46,9 @@ jobs:
             drivers/power/supply/qcom/fg-core.h
             drivers/power/supply/qcom/qpnp-fg-gen4.c
             drivers/power/supply/qcom_cas/bq27z561_fg.c
+            drivers/baseband-guard
+            drivers/Makefile
+            drivers/Kconfig
             drivers/thermal/cpu_cooling.c
             drivers/thermal/thermal_core.c
             include/linux/cpu_cooling.h

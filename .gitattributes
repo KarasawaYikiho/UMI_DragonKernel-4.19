@@ -15,3 +15,4 @@ Makefile text eol=lf
 /Documentation/dragonkernel/*.md text eol=lf
 patches/susfs/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
 patches/sukisu/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
+patches/bbg/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof

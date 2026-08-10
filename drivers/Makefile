@@ -195,3 +195,4 @@ obj-$(CONFIG_GNSS)		+= gnss/
 obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_DRAGONKERNEL_KERNELSU)	+= kernelsu/kernel/
 obj-$(CONFIG_DRAGONKERNEL_SUKISU)	+= sukisu/kernel/
+obj-$(CONFIG_BBG)			+= baseband-guard/

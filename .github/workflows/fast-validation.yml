@@ -12,7 +12,7 @@ on:
         description: Kernel variant
         required: true
         type: choice
-        options: [original, kernelsu, sukisu]
+        options: [original, kernelsu, sukisu, bbg]
 
 permissions:
   contents: read
@@ -52,10 +52,13 @@ jobs:
         if: inputs.variant != 'original'
         shell: bash
         run: |
-          if [[ "${{ inputs.variant }}" == kernelsu ]]; then
+          if [[ "${{ inputs.variant }}" == kernelsu || "${{ inputs.variant }}" == bbg ]]; then
             scripts/dragonkernel/prepare_susfs.sh
           else
             scripts/dragonkernel/prepare_sukisu.sh
+          fi
+          if [[ "${{ inputs.variant }}" == bbg ]]; then
+            scripts/dragonkernel/prepare_bbg.sh
           fi
 
       - name: Build selected kernel

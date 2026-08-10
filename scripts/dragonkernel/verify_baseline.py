@@ -89,6 +89,8 @@ if "arch/arm64/configs/vendor/dragonkernel-kernelsu.config" not in tracked:
     fail("missing KernelSU config fragment")
 if "arch/arm64/configs/vendor/dragonkernel-sukisu.config" not in tracked:
     fail("missing SukiSU config fragment")
+if "arch/arm64/configs/vendor/dragonkernel-bbg.config" not in tracked:
+    fail("missing BBG config fragment")
 
 devices = data["device_family"]["devices"]
 if len({device["codename"] for device in devices}) != len(devices):
@@ -232,6 +234,40 @@ for path, expected_hash in susfs_patches.items():
     actual_hash = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
     if actual_hash != expected_hash:
         fail(f"SUSFS patch hash mismatch: {path}")
+
+bbg = data["upstreams"].get("baseband_guard", {})
+if bbg.get("url") != "https://github.com/vc-teahouse/Baseband-guard.git":
+    fail("unexpected Baseband Guard source")
+if bbg.get("ref") != "a54e0dc6cf0aff4dd87fec49644a02d2eb612905":
+    fail("unexpected Baseband Guard ref")
+if bbg.get("commit") != bbg.get("ref"):
+    fail("Baseband Guard ref must be a pinned commit")
+bbg_gitlink = subprocess.check_output(
+    ["git", "ls-files", "--stage", "drivers/baseband-guard"], cwd=ROOT, text=True
+).split()
+if bbg_gitlink[:2] != ["160000", bbg["commit"]]:
+    fail("Baseband Guard submodule does not match its lock")
+bbg_patch = "patches/bbg/a54e0dc6-hardening.patch"
+if bbg_patch not in tracked:
+    fail("missing Baseband Guard hardening patch")
+if hashlib.sha256((ROOT / bbg_patch).read_bytes()).hexdigest() != bbg.get(
+    "hardening_patch_sha256"
+):
+    fail("Baseband Guard hardening patch hash mismatch")
+
+bbg_config = indexed_text("arch/arm64/configs/vendor/dragonkernel-bbg.config")
+for token in (
+    "CONFIG_BBG=y",
+    "CONFIG_BBG_BLOCK_BOOT=y",
+    "# CONFIG_BBG_BLOCK_RECOVERY is not set",
+    "baseband_guard",
+):
+    if token not in bbg_config:
+        fail("BBG config contract changed")
+if 'obj-$(CONFIG_BBG)' not in indexed_text("drivers/Makefile"):
+    fail("BBG build integration missing")
+if 'source "drivers/baseband-guard/Kconfig"' not in indexed_text("drivers/Kconfig"):
+    fail("BBG Kconfig integration missing")
 
 root_hiding = data.get("common_security", {}).get("root_hiding", {})
 if set(root_hiding.get("required_variants", [])) != expected_variants - {"original"}:

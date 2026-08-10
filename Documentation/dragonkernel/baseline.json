@@ -108,6 +108,12 @@
       "commit": "001e69919c6271f690fd00b17e4c721c9e599152",
       "kernel_patch_sha256": "66c7c64c62a07416d9fe6cf7cdf26d1e60c874cd005cf8b5ac0639d82de892ef",
       "kernelsu_patch_sha256": "01d57509cb58269954368afe0481388f4255282c8af0851b6055de8c514c12d5"
+    },
+    "baseband_guard": {
+      "url": "https://github.com/vc-teahouse/Baseband-guard.git",
+      "ref": "a54e0dc6cf0aff4dd87fec49644a02d2eb612905",
+      "commit": "a54e0dc6cf0aff4dd87fec49644a02d2eb612905",
+      "hardening_patch_sha256": "110f5d73b5903750d2f7c828b7f0966ad81997fc662dac931fec4cbe960e9bc1"
     }
   },
   "release_variants": [

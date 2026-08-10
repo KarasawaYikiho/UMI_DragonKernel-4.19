@@ -1,0 +1,250 @@
+diff --git a/Kconfig b/Kconfig
+index e0dcf9e..efbaa74 100644
+--- a/Kconfig
++++ b/Kconfig
+@@ -2,7 +2,7 @@ menu "Baseband Security Guard Configuration"
+ 
+ config BBG
+        bool "Enable Baseband Guard (Anti-Format)" 
+-       default y
++       default n
+        depends on SECURITY
+        help
+           An Android baseband anti-formatting protector 
+diff --git a/Makefile b/Makefile
+index 9d2f3f1..bc20e9c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -16,27 +16,6 @@ else
+   $(shell mkdir -p $(objtree)/security/selinux)
+   $(shell mv $(objtree)/flask.h $(objtree)/av_permissions.h $(objtree)/security/selinux)
+ endif
+-
+-GIT_BIN := /usr/bin/env PATH="$$PATH":/usr/bin:/usr/local/bin git
+-
+-ifeq ($(findstring $(srctree),$(src)),$(srctree))
+-  BBG_DIR := $(src)
+-else
+-  BBG_DIR := $(srctree)/$(src)
+-endif
+-
+-$(shell cd $(BBG_DIR) && test -f .git/shallow && $(GIT_BIN) fetch --unshallow)
+-
+-REPO_LINK := $(shell cd $(BBG_DIR) && $(GIT_BIN) remote get-url origin 2>/dev/null)
+-COMMIT_SHA := $(shell cd $(BBG_DIR) && $(GIT_BIN) rev-parse --short=8 HEAD 2>/dev/null)
+-
+-ifeq ($(strip $(REPO_LINK)),)
+-  REPO_LINK := unknown
+-endif
+-ifeq ($(strip $(COMMIT_SHA)),)
+-  COMMIT_SHA := unknown
+-endif
+-
+ ifeq ($(shell grep -q "file_ioctl_compat" $(srctree)/include/linux/lsm_hook_defs.h $(srctree)/include/linux/lsm_hooks.h 2>/dev/null && echo true),true)
+     ccflags-y += -DBB_HAS_IOCTL_COMPAT
+     $(info -- Baseband-guard/compat: found file_ioctl_compat)
+@@ -71,9 +50,3 @@ ifeq ($(CONFIG_BBG),y)
+     $(info -- Baseband-guard: Okay,seems this Kernel doesn't need to check config.)
+   endif
+ endif
+-
+-$(info -- BBG was enabled!)
+-$(info -- BBG version: $(COMMIT_SHA))
+-$(info -- BBG repo: $(REPO_LINK))
+-ccflags-y += -DBBG_VERSION=\"$(COMMIT_SHA)\"
+-ccflags-y += -DBBG_REPO=\"$(REPO_LINK)\"
+diff --git a/baseband_guard.c b/baseband_guard.c
+index f95d9fa..f7a6c59 100644
+--- a/baseband_guard.c
++++ b/baseband_guard.c
+@@ -3,44 +3,17 @@
+ #include <linux/security.h>
+ #include <linux/fs.h>
+ #include <linux/binfmts.h>
+-#include <linux/namei.h>
+ #include <linux/blk_types.h>
+-#include <linux/slab.h>
+ #include <linux/string.h>
+ #include <linux/errno.h>
+ #include <linux/version.h>
+ #include <linux/cred.h>
+-#include <linux/dcache.h>
+-#include <linux/hashtable.h>
+ 
+ #include "kernel_compat.h"
+ #include "baseband_guard.h"
+ #include "tracing/tracing.h"
+ #include "blkdev_helper.h"
+ 
+-struct device_hash_node { dev_t dev; struct hlist_node h; };
+-DEFINE_HASHTABLE(allowed_devs, 7);
+-
+-static bool allow_has(dev_t dev)
+-{
+-	struct device_hash_node *p;
+-
+-	hash_for_each_possible(allowed_devs, p, h, (u64)dev)
+-		if (p->dev == dev) return true;
+-	return false;
+-}
+-
+-static void allow_add(dev_t dev)
+-{
+-	struct device_hash_node *n;
+-	if (!dev || allow_has(dev)) return;
+-	n = kmalloc(sizeof(*n), GFP_ATOMIC);
+-	if (!n) return;
+-	n->dev = dev;
+-	hash_add(allowed_devs, &n->h, (u64)dev);
+-	bb_pr("allow-cache dev %u:%u\n", MAJOR(dev), MINOR(dev));
+-}
+-
+ static bool is_zram_device(dev_t dev)
+ {
+ 	bool is_zram = bbg_is_named_device(dev, "zram");
+@@ -51,77 +24,16 @@ static bool is_zram_device(dev_t dev)
+ 	return is_zram;
+ }
+ 
+-static bool reverse_allow_match_and_cache(dev_t cur)
+-{
+-	if (!cur) return false;
+-	if (is_zram_device(cur)) {
+-		allow_add(cur);
+-		return true;
+-	}
+-	if (is_allowed_partition_dev_resolve(cur)) {
+-		allow_add(cur);
+-		return true;
+-	}
+-	return false;
+-}
+-
+-static const char *bbg_file_path(struct file *file, char *buf, int buflen)
+-{
+-	char *p;
+-	if (!file || !buf || buflen <= 0) return NULL;
+-	buf[0] = '\0';
+-	p = d_path(&file->f_path, buf, buflen);
+-	return IS_ERR(p) ? NULL : p;
+-}
+-
+-static int bbg_get_cmdline(char *buf, int buflen)
++static bool is_allowed_device(dev_t dev)
+ {
+-	int n, i;
+-	if (!buf || buflen <= 0) return 0;
+-	n = get_cmdline(current, buf, buflen);
+-	if (n <= 0) return 0;
+-	for (i = 0; i < n - 1; i++) if (buf[i] == '\0') buf[i] = ' ';
+-	if (n < buflen) buf[n] = '\0';
+-	else buf[buflen - 1] = '\0';
+-	return n;
+-}
+-
+-static void bbg_log_deny_detail(const char *why, struct file *file, struct inode *inode, unsigned int cmd_opt)
+-{
+-	const int PATH_BUFLEN = 256;
+-	const int CMD_BUFLEN  = 256;
+-
+-	char *pathbuf = kmalloc(PATH_BUFLEN, GFP_ATOMIC);
+-	char *cmdbuf  = kmalloc(CMD_BUFLEN,  GFP_ATOMIC);
+-
+-	const char *path = pathbuf ? bbg_file_path(file, pathbuf, PATH_BUFLEN) : NULL;
+-	dev_t dev = inode ? inode->i_rdev : 0;
+-
+-	if (cmdbuf)
+-		bbg_get_cmdline(cmdbuf, CMD_BUFLEN);
+-
+-	if (cmd_opt) {
+-		pr_info(
+-			"baseband_guard: deny %s cmd=0x%x dev=%u:%u path=%s pid=%d comm=%s argv=\"%s\"\n",
+-			why, cmd_opt, MAJOR(dev), MINOR(dev),
+-			path ? path : "?", current->pid, current->comm,
+-			cmdbuf ? cmdbuf : "?");
+-	} else {
+-		pr_info(
+-			"baseband_guard: deny %s dev=%u:%u path=%s pid=%d comm=%s argv=\"%s\"\n",
+-			why, MAJOR(dev), MINOR(dev),
+-			path ? path : "?", current->pid, current->comm,
+-			cmdbuf ? cmdbuf : "?");
+-	}
+-
+-	kfree(cmdbuf);
+-	kfree(pathbuf);
++	if (!dev)
++		return false;
++	return is_zram_device(dev) || is_allowed_partition_dev_resolve(dev);
+ }
+ 
+-static int deny(const char *why, struct file *file, struct inode *inode, unsigned int cmd_opt)
++static int deny(void)
+ {
+-	bbg_log_deny_detail(why, file, inode, cmd_opt);
+-	bb_pr_rl("deny %s pid=%d comm=%s\n", why, current->pid, current->comm);
++	bb_pr_rl("denied block-device operation\n");
+ 	if (!BB_ENFORCING) return 0;
+ 	return -EPERM;
+ }
+@@ -139,10 +51,10 @@ static int bb_file_permission(struct file *file, int mask)
+ 	inode = file_inode(file);
+ 	if (likely(!S_ISBLK(inode->i_mode))) return 0;
+ 
+-	if (allow_has(inode->i_rdev) || reverse_allow_match_and_cache(inode->i_rdev))
++	if (is_allowed_device(inode->i_rdev))
+ 		return 0;
+ 
+-	return deny("write to protected partition", file, inode, 0);
++	return deny();
+ }
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0)
+@@ -160,10 +72,10 @@ static int bb_inode_setattr(struct dentry *dentry, struct iattr *iattr)
+ 
+ 	if (likely(!S_ISBLK(inode->i_mode))) return 0;
+ 
+-	if (allow_has(inode->i_rdev) || reverse_allow_match_and_cache(inode->i_rdev))
++	if (is_allowed_device(inode->i_rdev))
+ 		return 0;
+ 
+-	return deny("setattr on protected partition", 0, inode, 0);
++	return deny();
+ }
+ 
+ static inline bool is_destructive_ioctl(unsigned int cmd)
+@@ -207,10 +119,10 @@ static int bb_file_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 	if (likely(current_process_trusted()))
+ 		return 0;
+ 
+-	if (allow_has(inode->i_rdev) || reverse_allow_match_and_cache(inode->i_rdev))
++	if (is_allowed_device(inode->i_rdev))
+ 		return 0;
+ 
+-	return deny("destructive ioctl on protected partition", file, inode, cmd);
++	return deny();
+ }
+ 
+ #ifdef BB_HAS_IOCTL_COMPAT
+@@ -244,10 +156,7 @@ static struct security_hook_list bb_hooks[] = {
+ 
+ static int __init bbg_init(void)
+ {
+-	security_add_hooks_compat(bb_hooks, ARRAY_SIZE(bb_hooks)); // init lsm hooks and print version notice
+-	pr_info("baseband_guard power by https://t.me/qdykernel\n");
+-	pr_info("baseband_guard repo: %s", __stringify(BBG_REPO));
+-	pr_info("baseband_guard version: %s", __stringify(BBG_VERSION));
++	security_add_hooks_compat(bb_hooks, ARRAY_SIZE(bb_hooks));
+ 	return 0;
+ }
+ 
+@@ -263,8 +172,8 @@ DEFINE_LSM(baseband_guard) = {
+ };
+ #endif
+ 
+-MODULE_DESCRIPTION("protect All Block & Power by TG@qdykernel");
+-MODULE_AUTHOR("秋刀鱼 & https://t.me/qdykernel");
++MODULE_DESCRIPTION("Android critical partition write guard");
++MODULE_AUTHOR("Baseband-guard contributors");
+ MODULE_LICENSE("GPL v2");
+ 
+ 

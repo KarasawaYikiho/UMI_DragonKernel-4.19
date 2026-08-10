@@ -1,0 +1,82 @@
+name: BBG validation build
+
+on:
+  push:
+    paths:
+      - ".github/workflows/bbg-validation.yml"
+      - "arch/**"
+      - "block/**"
+      - "certs/**"
+      - "crypto/**"
+      - "drivers/**"
+      - "fs/**"
+      - "include/**"
+      - "init/**"
+      - "ipc/**"
+      - "kernel/**"
+      - "lib/**"
+      - "mm/**"
+      - "net/**"
+      - "security/**"
+      - "sound/**"
+      - "virt/**"
+      - "patches/bbg/**"
+      - "patches/susfs/**"
+      - "scripts/dragonkernel/**"
+      - "Documentation/dragonkernel/baseline.json"
+      - "Kconfig"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: bbg-${{ matrix.device }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [umi, cmi, cas, thyme, apollo]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set output directory
+        run: echo "OUT_ROOT=$RUNNER_TEMP/dragonkernel-out" >> "$GITHUB_ENV"
+
+      - name: Install build dependencies
+        run: bash scripts/dragonkernel/bootstrap_wsl.sh
+
+      - name: Fetch locked toolchain
+        shell: bash
+        run: scripts/dragonkernel/prepare_toolchain.sh "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Apply locked KernelSU, SUSFS and BBG patches
+        run: |
+          scripts/dragonkernel/prepare_susfs.sh
+          scripts/dragonkernel/prepare_bbg.sh
+
+      - name: Build BBG kernel
+        run: scripts/dragonkernel/build_bbg.sh "${{ matrix.device }}"
+
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: bbg-${{ matrix.device }}-${{ github.sha }}
+          path: |
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/.config
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/include/config/kernel.release
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/SHA256SUMS
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/build.log
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/arch/arm64/boot/Image
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/arch/arm64/boot/dts/**/*.dtb
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/arch/arm64/boot/dts/**/*.dtbo
+            ${{ env.OUT_ROOT }}/bbg/${{ matrix.device }}/**/*.ko
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

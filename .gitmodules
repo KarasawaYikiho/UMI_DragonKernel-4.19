@@ -6,3 +6,7 @@
 	path = drivers/sukisu
 	url = https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
 	shallow = true
+[submodule "drivers/baseband-guard"]
+	path = drivers/baseband-guard
+	url = https://github.com/vc-teahouse/Baseband-guard.git
+	shallow = true
