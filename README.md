@@ -7,7 +7,8 @@
 - 设备：`umi`、`cmi`、`cas`、`thyme`、`apollo`
 - 内核：`4.19.325`
 - 已构建变体：Original、KernelSU + SUSFS、SukiSU + KPM + SUSFS
-- 待验证变体：Magisk、BBG
+- 已实现本地结构链：Magisk
+- 待实现变体：BBG
 
 ## 当前实现
 
@@ -15,6 +16,7 @@
 - 删除 Xiaomi `thermal_message` 用户态云控邮箱；保留 TSENS、BCL、LMH、标准 thermal zone 和硬件过热保护。
 - 启动设计容量按设备型号固定：`umi`/`thyme` 4780、`cmi`/`cas` 4500、`apollo` 5000 mAh。FG Gen4 只取消重启时将高学习容量恢复为原厂值的逻辑；手动写入仍受原厂值限制，BQ 路径直接报告电量计 FCC。
 - 提供单设备、单变体、带 ccache 的 Actions 快速构建，以及使用私有 ROM `boot.img` 模板的本地结构适配检查。
+- Magisk 复用 Original 内核；目标设备经 Magisk App 修补的私有模板只在本地合并，并校验 Magisk ramdisk 保持不变。
 
 ## 验证状态
 

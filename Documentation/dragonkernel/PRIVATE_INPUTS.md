@@ -11,9 +11,11 @@
 ```bash
 scripts/dragonkernel/prepare_rom_boot.sh <private-input> <device>
 scripts/dragonkernel/validate_rom_artifact.sh <device> <artifact-dir> <output-boot.img>
+scripts/dragonkernel/validate_magisk_artifact.sh <device> <original-artifact-dir> <output-boot.img>
 ```
 
 - 输入保存在仓库外或被忽略目录；路径只通过参数或环境变量传入。
 - 脚本只输出通用成功或失败结果，不打印输入身份和内容清单。
 - boot 模板、重打包结果和设备日志只用于本地验证，不上传。
 - 未建立批准的非公开注入通道前，CI 只能处理公开源码产物，不能生成正式 ROM 刷机包。
+- Magisk 模板必须由目标设备使用 Magisk App 修补自身 ROM 镜像，并保存到忽略目录；脚本只保真替换 Original 内核并检查 Magisk ramdisk。

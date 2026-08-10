@@ -112,6 +112,9 @@ if {
 
 
 def indexed_text(path: str) -> str:
+    worktree_path = ROOT / path
+    if worktree_path.exists():
+        return worktree_path.read_text(encoding="utf-8")
     return subprocess.check_output(
         ["git", "show", f":{path}"], cwd=ROOT, text=True
     )
@@ -260,6 +263,15 @@ if avbtool != {
     "commit": "25a14f7e3e6493a7f1a42aa9f78209d4dbe848e9",
 }:
     fail("unexpected avbtool lock")
+
+magisk_validator = indexed_text("scripts/dragonkernel/validate_magisk_artifact.sh")
+for token in (
+    "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
+    '[[ "$status" -eq 1 ]]',
+    'cmp -s "$template_ramdisk" "$output_ramdisk"',
+):
+    if token not in magisk_validator:
+        fail("Magisk artifact validation contract changed")
 
 thermal_sources = {
     "drivers/thermal/thermal_core.c": ("thermal_message", "thermal-message"),

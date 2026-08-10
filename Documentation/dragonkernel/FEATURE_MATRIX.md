@@ -13,7 +13,7 @@
 | Original | 构建通过 | 五设备临时启动和硬件矩阵 |
 | KernelSU + SUSFS | 构建通过 | 启动、Root、管理器与应用检测 |
 | SukiSU + KPM + SUSFS | 构建通过 | 启动、Root、KPM、管理器与应用检测 |
-| Magisk | 未开始 | boot 注入方案、构建和三层隐藏 |
+| Magisk | 已实现 | 同机 App 修补模板、五设备结构配对、启动/Root 与三层隐藏 |
 | BBG | 未开始 | 独立构建、关键分区拦截与正常刷写回归 |
 | 可刷 ZIP / Release | 未开始 | 恢复路径、五设备全变体和 CI 发布门禁 |
 

@@ -25,6 +25,7 @@ jobs:
         scripts/dragonkernel/prepare_rom_boot.sh
         scripts/dragonkernel/repack_boot.sh
         scripts/dragonkernel/validate_rom_artifact.sh
+        scripts/dragonkernel/validate_magisk_artifact.sh
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,6 +50,7 @@ jobs:
       - run: python3 scripts/dragonkernel/verify_baseline.py
       - run: python3 scripts/dragonkernel/release_name.py --self-test
       - run: python3 scripts/dragonkernel/refresh_avb_footer.py --self-test
+      - run: scripts/dragonkernel/validate_magisk_artifact.sh --self-test
       - run: bash -n $SHELL_SCRIPTS
       - run: |
           for script in $SHELL_SCRIPTS scripts/dragonkernel/release_name.py scripts/dragonkernel/refresh_avb_footer.py; do
