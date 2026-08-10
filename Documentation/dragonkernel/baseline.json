@@ -57,6 +57,11 @@
       "url": "https://github.com/topjohnwu/Magisk/releases/download/v30.7/Magisk-v30.7.apk",
       "apk_sha256": "e0d32d2123532860f97123d927b1bb86c4e08e6fd8a48bfc6b5bee0afae9ebd5",
       "binary_sha256": "a18ecbd7981179494b7d281453d6c4e25b5c719e7d2ef7f6eba3c6be3043c58e"
+    },
+    "anykernel3": {
+      "url": "https://github.com/osm0sis/AnyKernel3.git",
+      "ref": "master",
+      "commit": "e4b1bb25ca2aabcfd57f694a5998d87130701b71"
     }
   },
   "upstreams": {

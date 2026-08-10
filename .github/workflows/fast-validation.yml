@@ -64,6 +64,18 @@ jobs:
       - name: Build selected kernel
         run: scripts/dragonkernel/build_kernel.sh "${{ inputs.variant }}" "${{ inputs.device }}"
 
+      - name: Fetch locked flashable template
+        run: scripts/dragonkernel/prepare_anykernel3.sh "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Package flashable candidate
+        shell: bash
+        run: |
+          output="$OUT_ROOT/${{ inputs.variant }}/${{ inputs.device }}"
+          python3 scripts/dragonkernel/package_anykernel.py \
+            "${{ inputs.device }}" "${{ inputs.variant }}" \
+            "$ANYKERNEL3_DIR" "$output" "$output/flashable-candidate.zip"
+          sha256sum "$output/flashable-candidate.zip" > "$output/flashable-candidate.zip.sha256"
+
       - name: Upload validation evidence
         uses: actions/upload-artifact@v7
         with:
@@ -73,6 +85,8 @@ jobs:
             ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/include/config/kernel.release
             ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/SHA256SUMS
             ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/build.log
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/flashable-candidate.zip
+            ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/flashable-candidate.zip.sha256
             ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/arch/arm64/boot/Image
             ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/arch/arm64/boot/dts/**/*.dtb
             ${{ env.OUT_ROOT }}/${{ inputs.variant }}/${{ inputs.device }}/arch/arm64/boot/dts/**/*.dtbo

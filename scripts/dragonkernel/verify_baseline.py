@@ -303,6 +303,14 @@ if avbtool != {
 }:
     fail("unexpected avbtool lock")
 
+anykernel3 = data.get("boot_tools", {}).get("anykernel3", {})
+if anykernel3 != {
+    "url": "https://github.com/osm0sis/AnyKernel3.git",
+    "ref": "master",
+    "commit": "e4b1bb25ca2aabcfd57f694a5998d87130701b71",
+}:
+    fail("unexpected AnyKernel3 lock")
+
 magisk_validator = indexed_text("scripts/dragonkernel/validate_magisk_artifact.sh")
 for token in (
     "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
