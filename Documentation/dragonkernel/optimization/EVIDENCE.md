@@ -167,3 +167,5 @@ Normal `SIGTERM` exits successfully, so uninstall is not restarted. Recovery rem
 ### Test plan
 
 Require Project contract plus host/Android arm64 compilation, native self-tests, deterministic packaging and watchdog-token validation in Actions. Device crash injection and boot/uninstall behavior remain in the post-optimization module regression gate.
+
+`45dccdd7d84f` passed Project contract run `31488107378` and DAC module validation run `31488107379`. The downloaded artifact matched its Actions digest; module `0.8.0` then passed its portable checksum, fixed inventory/modes, AArch64 ELF, safe defaults and watchdog contract. The temporary download was removed.
