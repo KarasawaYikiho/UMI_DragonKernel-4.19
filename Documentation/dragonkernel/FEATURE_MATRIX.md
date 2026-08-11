@@ -8,7 +8,7 @@
 | Joyose 远程云控隔离 | DAC `0.8.1` 已通过编译和模块 CI | 实机 UID/cgroup、流量和本地功能 |
 | 电池解容 | 自动学习上限解除；启动值按型号 | 实机 FCC 学习、持久化和保护回归 |
 | Original/KernelSU/SukiSU | 安全修复 SHA 的 Original/KernelSU/SukiSU/BBG 矩阵 20/20 | 代表 Artifact、ROM 配对与可复现复核 |
-| Magisk | 同 SHA Original Artifact 转包通道与私有 boot 结构校验已实现 | 五机型 Action、ROM 专属修补与三层隐藏 |
+| Magisk | 五机型同 SHA Original 转包与下载交叉校验 5/5；私有 boot 结构校验已实现 | ROM 专属修补与三层隐藏实机验证 |
 | Baseband-guard | 公共 LSM；启动链缺口已修 | 全矩阵与实机写保护/恢复 |
 | 可刷候选包 | Image-only AnyKernel3 已实现 | Recovery/Fastboot 刷写与回滚 |
 | 安全与冲突审查 | 预实机扫描发现两项并已修 | 最终 SHA 全仓、差异、供应链、冲突复审 |
