@@ -137,3 +137,5 @@ Independent event handlers can race and apply contradictory policies. Add one pu
 ### Risk, compatibility and test plan
 
 The selector emits only an enum and has no package names or resource backend. Invalid input fails SAFE. Exercise daily, frame rescue, game thermal, thermal emergency and invalid-input priority in host/Android arm64 Actions before connecting real event sources.
+
+The daemon must also fail closed when event-loop descriptors, config watches or timer arming fail, close every descriptor on partial initialization, and rearm telemetry after a validated config reload. Actions compile both host and Android arm64 paths under `-Werror`.

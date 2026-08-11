@@ -20,6 +20,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <initializer_list>
 #include <map>
 #include <set>
 #include <sstream>
@@ -414,6 +415,19 @@ bool atomic_write(const std::string& path, const std::string& data) {
   return true;
 }
 
+void close_fds(std::initializer_list<int> descriptors) {
+  for (const int descriptor : descriptors) {
+    if (descriptor >= 0) close(descriptor);
+  }
+}
+
+bool arm_timer(int descriptor, int interval_s) {
+  itimerspec timer {};
+  timer.it_value.tv_sec = interval_s;
+  timer.it_interval.tv_sec = interval_s;
+  return timerfd_settime(descriptor, 0, &timer, nullptr) == 0;
+}
+
 std::string status_json(const std::string& scene, const Config& config,
                         const std::string& cloud_status, size_t cloud_cgroups,
                         const std::string& error,
@@ -583,19 +597,25 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   const int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
   const int inotify_fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
   const int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-  if (signal_fd < 0 || timer_fd < 0 || inotify_fd < 0 || epoll_fd < 0) return 1;
-
-  itimerspec timer {};
-  timer.it_value.tv_sec = config.telemetry_interval_s;
-  timer.it_interval.tv_sec = config.telemetry_interval_s;
-  timerfd_settime(timer_fd, 0, &timer, nullptr);
-  inotify_add_watch(inotify_fd, parent_path(config_path).c_str(),
-                    IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE | IN_DELETE);
+  if (signal_fd < 0 || timer_fd < 0 || inotify_fd < 0 || epoll_fd < 0) {
+    close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+    return 1;
+  }
+  const int watch = inotify_add_watch(
+      inotify_fd, parent_path(config_path).c_str(),
+      IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE | IN_DELETE);
+  if (!arm_timer(timer_fd, config.telemetry_interval_s) || watch < 0) {
+    close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+    return 1;
+  }
   for (const int descriptor : {signal_fd, timer_fd, inotify_fd}) {
     epoll_event event {};
     event.events = EPOLLIN;
     event.data.fd = descriptor;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, descriptor, &event) != 0) return 1;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, descriptor, &event) != 0) {
+      close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+      return 1;
+    }
   }
 
   bool running = true;
@@ -610,6 +630,11 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
         if (read(signal_fd, &info, sizeof(info)) != static_cast<ssize_t>(sizeof(info))) continue;
         if (info.ssi_signo == SIGHUP) {
           reload();
+          if (!arm_timer(timer_fd, config.telemetry_interval_s)) {
+            error = "timerfd rearm failed";
+            scene = "SAFE";
+            running = false;
+          }
           publish();
         } else {
           running = false;
@@ -618,6 +643,11 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
         char buffer[512];
         while (read(inotify_fd, buffer, sizeof(buffer)) > 0) {}
         reload();
+        if (!arm_timer(timer_fd, config.telemetry_interval_s)) {
+          error = "timerfd rearm failed";
+          scene = "SAFE";
+          running = false;
+        }
         publish();
       } else if (events[index].data.fd == timer_fd) {
         uint64_t expirations = 0;
@@ -643,10 +673,7 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   cloud_status = "stopped";
   scene = "STOPPED";
   publish();
-  close(epoll_fd);
-  close(inotify_fd);
-  close(timer_fd);
-  close(signal_fd);
+  close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
   return 0;
 }
 
