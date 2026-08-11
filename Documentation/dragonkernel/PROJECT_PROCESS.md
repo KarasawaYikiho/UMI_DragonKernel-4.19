@@ -16,6 +16,8 @@ Magisk 复用 Original 内核。目标设备先用 Magisk App 修补自身 ROM �
 
 BBG 只作为默认关闭的 KernelSU + SUSFS 验证叠加层。启用时拦截 Root 派生上下文对关键分区和 boot 的写入，recovery 保护保持关闭；实机必须同时验证恶意写入被拒绝、正常系统更新不回退，以及 recovery/fastboot 可恢复。
 
+可刷候选包固定 AnyKernel3 提交，只携带目标设备与变体的 Image，复用当前槽 boot 的 ramdisk、模块、DTB/DTBO 和 vbmeta 状态。候选包仅用于门禁验证，不是 Release。
+
 ## 优化边界
 
 - 只优化可复用的调度、频率、内存、I/O、网络和热管理机制。
@@ -29,6 +31,7 @@ BBG 只作为默认关闭的 KernelSU + SUSFS 验证叠加层。启用时拦截 
 - 优先使用 GitHub Actions 和下载产物验证。
 - 本地编译仅允许在 WSL 2 ext4 中进行验证，不得作为 Release 来源。
 - 快速构建只用于单设备、单变体迭代；合并门禁仍是完整矩阵。
+- 构建时间来自提交时间；IKHEADERS 归档固定成员顺序、时间和属主。相同提交的 Image 与候选 ZIP 必须逐字节一致。
 - 私有 ROM、镜像、密钥、日志及其身份信息不得进入 Git、缓存、Artifact 或公开元数据。
 
 ## 发布命名
