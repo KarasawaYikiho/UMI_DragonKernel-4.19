@@ -68,6 +68,12 @@ if ! git -C "$root/drivers/baseband-guard" apply --reverse --check \
   echo "Baseband Guard hardening patch is not applied" >&2
   exit 1
 fi
+bbg_header="$root/drivers/baseband-guard/baseband_guard.h"
+bbg_boot_block=$(sed -n '/^#ifndef CONFIG_BBG_BLOCK_BOOT$/,/^#endif$/p' "$bbg_header")
+for partition in dtbo vbmeta vbmeta_system vbmeta_vendor; do
+  [[ $(grep -Fc "\"$partition\"" "$bbg_header") -eq 1 ]]
+  grep -Fq "\"$partition\"" <<<"$bbg_boot_block"
+done
 
 mkdir -p "$out"
 exec > >(tee "$out/build.log") 2>&1

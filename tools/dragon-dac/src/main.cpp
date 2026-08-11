@@ -36,6 +36,8 @@ namespace {
 
 constexpr int kMaxEvents = 4;
 constexpr uint64_t kHeartbeatIntervalSeconds = 30;
+constexpr uint64_t kAndroidUidRange = 100000;
+constexpr uint64_t kAndroidSystemAppId = 1000;
 
 struct Config {
   bool enabled = false;
@@ -188,13 +190,6 @@ bool is_decimal(const char* value) {
   return true;
 }
 
-std::string read_first_line(const std::string& path) {
-  std::ifstream input(path, std::ios::binary);
-  std::string line;
-  std::getline(input, line, '\0');
-  return line;
-}
-
 bool is_joyose_name(const std::string& name) {
   constexpr char kPackage[] = "com.xiaomi.joyose";
   return name == kPackage ||
@@ -202,8 +197,64 @@ bool is_joyose_name(const std::string& name) {
           name.size() > sizeof(kPackage) - 1 && name[sizeof(kPackage) - 1] == ':');
 }
 
+bool is_joyose_identity(const std::string& name, uint64_t effective_uid) {
+  return effective_uid % kAndroidUidRange == kAndroidSystemAppId &&
+         is_joyose_name(name);
+}
+
+bool read_proc_file_at(int proc_fd, const char* name, std::string* output) {
+  const int fd = openat(proc_fd, name, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+  if (fd < 0) return false;
+  char buffer[4096];
+  output->clear();
+  while (output->size() < 65536) {
+    const ssize_t count = read(fd, buffer, sizeof(buffer));
+    if (count == 0) break;
+    if (count < 0) {
+      if (errno == EINTR) continue;
+      close(fd);
+      output->clear();
+      return false;
+    }
+    output->append(buffer, static_cast<size_t>(count));
+  }
+  const bool complete = output->size() < 65536;
+  close(fd);
+  if (!complete) output->clear();
+  return complete;
+}
+
+bool effective_uid_from_status(const std::string& status, uint64_t* uid) {
+  std::istringstream input(status);
+  std::string line;
+  while (std::getline(input, line)) {
+    if (line.compare(0, 4, "Uid:") != 0) continue;
+    uint64_t real = 0;
+    uint64_t effective = 0;
+    uint64_t saved = 0;
+    uint64_t filesystem = 0;
+    std::istringstream values(line.substr(4));
+    if (!(values >> real >> effective >> saved >> filesystem)) return false;
+    *uid = effective;
+    return true;
+  }
+  return false;
+}
+
 bool is_joyose_pid(int pid) {
-  return is_joyose_name(read_first_line("/proc/" + std::to_string(pid) + "/cmdline"));
+  const std::string proc_path = "/proc/" + std::to_string(pid);
+  const int proc_fd = open(proc_path.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
+  if (proc_fd < 0) return false;
+  std::string cmdline;
+  std::string status;
+  const bool readable = read_proc_file_at(proc_fd, "cmdline", &cmdline) &&
+                        read_proc_file_at(proc_fd, "status", &status);
+  close(proc_fd);
+  uint64_t effective_uid = 0;
+  if (!readable || !effective_uid_from_status(status, &effective_uid)) return false;
+  const auto terminator = cmdline.find('\0');
+  if (terminator != std::string::npos) cmdline.resize(terminator);
+  return is_joyose_identity(cmdline, effective_uid);
 }
 
 std::string unified_cgroup_path(const std::string& content) {
@@ -477,6 +528,15 @@ int run_self_test() {
   if (!is_joyose_name("com.xiaomi.joyose") ||
       !is_joyose_name("com.xiaomi.joyose:worker") ||
       is_joyose_name("com.xiaomi.joyose.other")) return 1;
+  if (!is_joyose_identity("com.xiaomi.joyose", 1000) ||
+      !is_joyose_identity("com.xiaomi.joyose:worker", 101000) ||
+      is_joyose_identity("com.xiaomi.joyose", 10000) ||
+      is_joyose_identity("com.xiaomi.joyose.other", 1000)) return 1;
+  uint64_t parsed_uid = 0;
+  if (!effective_uid_from_status("Name:\tjoyose\nUid:\t1000\t1000\t1000\t1000\n",
+                                 &parsed_uid) ||
+      parsed_uid != 1000 ||
+      effective_uid_from_status("Uid:\tbroken\n", &parsed_uid)) return 1;
   if (unified_cgroup_path("2:cpu:/x\n0::/uid_1000/pid_12\n") !=
       "/uid_1000/pid_12") return 1;
   if (!unified_cgroup_path("0::/../unsafe\n").empty()) return 1;

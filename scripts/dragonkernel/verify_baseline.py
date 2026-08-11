@@ -254,6 +254,8 @@ for token in (
     "BPF_CGROUP_INET_EGRESS",
     "BPF_LINK_CREATE",
     "cgroup_is_joyose_only",
+    "is_joyose_identity",
+    "effective_uid_from_status",
     "BoostArbiter",
     "CpuBackend",
     "FreezeStateMachine",
@@ -358,6 +360,15 @@ if hashlib.sha256((ROOT / bbg_patch).read_bytes()).hexdigest() != bbg.get(
     "hardening_patch_sha256"
 ):
     fail("Baseband Guard hardening patch hash mismatch")
+bbg_patch_source = (ROOT / bbg_patch).read_text(encoding="utf-8")
+for token in (
+    '+\t"dtbo",',
+    '+\t"vbmeta", "vbmeta_system", "vbmeta_vendor",',
+    '-\t"dtbo",',
+    '-\t"vbmeta", "vbmeta_system", "vbmeta_vendor",',
+):
+    if token not in bbg_patch_source:
+        fail("BBG boot protection patch does not cover the complete boot chain")
 
 common_config = indexed_text("arch/arm64/configs/vendor/xiaomi/sm8250-common.config")
 for token in (

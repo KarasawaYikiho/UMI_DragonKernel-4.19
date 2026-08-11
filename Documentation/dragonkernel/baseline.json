@@ -139,7 +139,7 @@
       "url": "https://github.com/vc-teahouse/Baseband-guard.git",
       "ref": "a54e0dc6cf0aff4dd87fec49644a02d2eb612905",
       "commit": "a54e0dc6cf0aff4dd87fec49644a02d2eb612905",
-      "hardening_patch_sha256": "110f5d73b5903750d2f7c828b7f0966ad81997fc662dac931fec4cbe960e9bc1"
+      "hardening_patch_sha256": "e23a7a310fc5b2ed8e2932e8e3ad455a9e0b0ae253457512023a8a6f88acadf1"
     }
   },
   "release_variants": [
