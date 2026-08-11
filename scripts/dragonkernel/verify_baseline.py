@@ -511,7 +511,7 @@ fast_workflow = ".github/workflows/fast-validation.yml"
 if fast_workflow not in tracked:
     fail("missing targeted fast validation workflow")
 fast_source = (ROOT / fast_workflow).read_text(encoding="utf-8")
-if "actions/cache@v5" not in fast_source or 'USE_CCACHE: "1"' not in fast_source:
+if "actions/cache@caa296126883cff596d87d8935842f9db880ef25" not in fast_source or 'USE_CCACHE: "1"' not in fast_source:
     fail("targeted fast validation must use the compiler cache")
 if "options: [original, kernelsu, sukisu]" not in fast_source:
     fail("fast validation variants changed")
@@ -528,6 +528,24 @@ variant_workflows = (
 for workflow in variant_workflows:
     if "scripts/dragonkernel/prepare_bbg.sh" not in indexed_text(workflow):
         fail(f"variant workflow lacks common BBG preparation: {workflow}")
+
+action_locks = {
+    "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "actions/cache": "caa296126883cff596d87d8935842f9db880ef25",
+    "actions/upload-artifact": {
+        "b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+        "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+    },
+}
+for workflow in sorted((ROOT / ".github/workflows").glob("*.yml")):
+    source = indexed_text(workflow.relative_to(ROOT).as_posix())
+    for action, ref in re.findall(r"\buses:\s*([^@\s#]+)@([0-9A-Za-z._/-]+)", source):
+        expected = action_locks.get(action)
+        if expected is None:
+            fail(f"unreviewed external Action: {action}")
+        allowed = {expected} if isinstance(expected, str) else expected
+        if ref not in allowed or not re.fullmatch(r"[0-9a-f]{40}", ref):
+            fail(f"GitHub Action is not pinned to its reviewed commit: {action}")
 
 bbg_workflow_source = indexed_text(".github/workflows/bbg-validation.yml")
 for token in (

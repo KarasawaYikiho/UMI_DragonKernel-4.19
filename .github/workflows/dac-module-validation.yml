@@ -26,7 +26,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 1
           sparse-checkout: |
@@ -76,7 +76,7 @@ jobs:
           python3 scripts/dragonkernel/validate_dac_module.py \
             --zip out/a/*.zip --checksum out/a/*.sha256
           cp out/a/*.zip out/a/*.sha256 out/
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: dac-module
           path: |

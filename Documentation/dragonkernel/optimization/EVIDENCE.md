@@ -113,3 +113,15 @@ The controllers emit only normalized decisions. They are not connected to cgroup
 ### Test plan
 
 Exercise over-budget hysteresis and latency override, frame violation/recovery and bottleneck choice, plus immediate thermal tightening and delayed stepwise recovery. Require host and Android arm64 Actions and deterministic module validation before any runtime backend is enabled.
+
+`751c7f2efd34` passed Project contract and DAC module validation for module `0.6.0`; Actions compiled the host and Android arm64 daemon, validated deterministic packaging and produced the module artifact.
+
+## CI supply-chain lock
+
+### Problem and proposed change
+
+Major-version GitHub Action tags are movable and do not bind a final source SHA to immutable CI code. Resolve each reviewed official Action tag to its commit, pin every workflow reference, and make Project contract reject movable or unknown external Actions.
+
+### Risk, compatibility and test plan
+
+Pinned Actions retain their reviewed major versions but require an explicit commit update for future upgrades. Run Project contract, DAC validation and all four five-device kernel matrices because every workflow checkout/upload path changed; retain build and artifact evidence from the pinned workflow SHA.

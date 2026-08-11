@@ -7,7 +7,7 @@
 1. 对最终仓库执行多轮全量安全扫描，并对候选 SHA 相对上一已知安全基线执行变更扫描。
 2. 覆盖内核 syscall/ioctl、procfs/sysfs、LSM、Binder、cgroup/BPF、fuel gauge、镜像/ZIP 解析、CI、子模块与 DAC root daemon/安装脚本。
 3. Root 变体分别审查权限提升、凭据、hook/KPM/SUSFS、隐藏边界和管理器/注入链；BBG 始终按公共 LSM 单独审查。
-4. 所有外部源码、Action 与预编译工具必须固定版本和来源；Release 资产必须可复现并带独立哈希。
+4. 所有外部源码、GitHub Action 与预编译工具必须固定提交和来源；Project contract 拒绝可移动 Action 标签与未审查 Action；Release 资产必须可复现并带独立哈希。
 5. 禁止未解决的 Critical/High。Medium 必须修复或由维护者逐项记录影响、可达性与补偿控制；Low 不得成批掩盖同一根因。
 6. 私有输入、凭据、签名材料、漏洞利用细节和本地路径不得进入 Git、Actions、Artifact、日志或 Release。
 
