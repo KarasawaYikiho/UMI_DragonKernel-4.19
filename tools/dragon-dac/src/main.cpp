@@ -474,6 +474,41 @@ int run_self_test() {
     if (!freezer.transition(state)) return 1;
   }
   if (freezer.transition(dragon::FreezeState::kFrozen)) return 1;
+  dragon::DailyBudgetController daily(64, 2);
+  if (daily.update(2200, 2000, true) != 1024 ||
+      daily.update(2200, 2000, true) != 960 ||
+      daily.update(2200, 2000, false) != 1024) return 1;
+  dragon::GameController game(64, 2);
+  if (game.update(10000, 11000, 900, 700, 500, false).rescue != 0) return 1;
+  const auto cpu_rescue = game.update(10000, 11000, 900, 700, 500, false);
+  if (cpu_rescue.bottleneck != dragon::Bottleneck::kCpu || cpu_rescue.rescue != 64)
+    return 1;
+  if (game.update(10000, 9000, 900, 700, 500, false).rescue != 64 ||
+      game.update(10000, 9000, 900, 700, 500, false).rescue != 0 ||
+      game.update(10000, 11000, 900, 700, 500, true).bottleneck !=
+          dragon::Bottleneck::kThermal) return 1;
+  dragon::GameController gpu_game(64, 1);
+  dragon::GameController memory_game(64, 1);
+  if (gpu_game.update(10000, 11000, 500, 900, 700, false).bottleneck !=
+          dragon::Bottleneck::kGpu ||
+      memory_game.update(10000, 11000, 500, 700, 900, false).bottleneck !=
+          dragon::Bottleneck::kMemory ||
+      memory_game.update(0, 11000, 500, 700, 900, false).rescue != 0) return 1;
+  const dragon::ThermalConfig thermal_config {
+      300, 400, 200, 300, 100, 200, 768, 512, 256, 1000};
+  if (!dragon::ThermalGuard::valid(thermal_config)) return 1;
+  dragon::ThermalGuard thermal(thermal_config);
+  if (thermal.update(250, 0) != dragon::ThermalState::kWarm || thermal.cap() != 768 ||
+      thermal.update(150, 100) != dragon::ThermalState::kHot || thermal.cap() != 512 ||
+      thermal.update(50, 200) != dragon::ThermalState::kCritical ||
+      thermal.update(250, 500) != dragon::ThermalState::kCritical ||
+      thermal.update(250, 1200) != dragon::ThermalState::kHot) return 1;
+  auto invalid_thermal_config = thermal_config;
+  invalid_thermal_config.hot_enter = invalid_thermal_config.warm_enter;
+  dragon::ThermalGuard invalid_thermal(invalid_thermal_config);
+  if (dragon::ThermalGuard::valid(invalid_thermal_config) ||
+      invalid_thermal.update(1024, 0) != dragon::ThermalState::kCritical ||
+      invalid_thermal.cap() != 0) return 1;
   return 0;
 }
 

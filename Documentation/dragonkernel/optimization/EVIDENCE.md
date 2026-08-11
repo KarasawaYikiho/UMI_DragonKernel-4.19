@@ -93,3 +93,23 @@ The state machine makes rollback and illegal transitions explicit without freezi
 ### Test plan
 
 Exercise the full legal transition chain, rollback-to-active and illegal transition rejection in the native self-test. Require host/Android arm64 Actions and module-content validation; actual freeze/thaw remains a post-optimization device gate.
+
+`e203296ee00e` passed Project contract and DAC module validation for the no-write freezer ownership core and module `0.5.0` artifact.
+
+## Daily, game and thermal policy core
+
+### Problem and current implementation
+
+Fixed frequencies, frame rates, power limits and thermal thresholds conflict across devices, ROM policy owners and ambient conditions. The kernel thermal stack must remain authoritative.
+
+### Proposed change and benefit
+
+Add pure controllers for a caller-supplied daily soft power target, runtime-derived frame deadline and device/ROM-supplied thermal headroom thresholds. Consecutive-sample hysteresis limits oscillation; latency relaxes the daily cap, thermal pressure clears frame rescue, and recovery removes requests incrementally.
+
+### Risk, compatibility and rollback
+
+The controllers emit only normalized decisions. They are not connected to cgroup, cpufreq, KGSL, devfreq or thermal writes, contain no package/process special case and do not alter stock cooling. Removing the optional module removes them.
+
+### Test plan
+
+Exercise over-budget hysteresis and latency override, frame violation/recovery and bottleneck choice, plus immediate thermal tightening and delayed stepwise recovery. Require host and Android arm64 Actions and deterministic module validation before any runtime backend is enabled.

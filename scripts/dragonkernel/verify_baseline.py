@@ -255,6 +255,9 @@ for token in (
     "BoostArbiter",
     "CpuBackend",
     "FreezeStateMachine",
+    "DailyBudgetController",
+    "GameController",
+    "ThermalGuard",
     "kBinderGetFrozenInfo",
 ):
     if token not in dac_source:
