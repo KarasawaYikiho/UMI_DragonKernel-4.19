@@ -41,6 +41,86 @@ enum class ThermalState {
   kCritical,
 };
 
+enum class Scene {
+  kBoot,
+  kScreenOff,
+  kScreenOnIdle,
+  kDaily,
+  kInteractive,
+  kScroll,
+  kAppLaunch,
+  kAppSwitch,
+  kVideo,
+  kAudio,
+  kCamera,
+  kGameLoading,
+  kGame,
+  kGameFrameRescue,
+  kGameThermal,
+  kCharging,
+  kBatterySaver,
+  kThermalEmergency,
+  kSafe,
+};
+
+struct SceneInputs {
+  bool valid = true;
+  bool booting = false;
+  bool screen_on = true;
+  bool idle = false;
+  bool interactive = false;
+  bool scrolling = false;
+  bool app_launch = false;
+  bool app_switch = false;
+  bool video = false;
+  bool audio = false;
+  bool camera = false;
+  bool game_loading = false;
+  bool game = false;
+  bool frame_late = false;
+  bool thermal_limited = false;
+  bool thermal_emergency = false;
+  bool charging = false;
+  bool battery_saver = false;
+};
+
+class SceneSelector {
+ public:
+  Scene update(const SceneInputs& input) {
+    charging_ = input.charging;
+    battery_saver_ = input.battery_saver;
+    if (!input.valid) scene_ = Scene::kSafe;
+    else if (input.thermal_emergency) scene_ = Scene::kThermalEmergency;
+    else if (input.booting) scene_ = Scene::kBoot;
+    else if (!input.screen_on) scene_ = Scene::kScreenOff;
+    else if (input.game && input.thermal_limited) scene_ = Scene::kGameThermal;
+    else if (input.game_loading) scene_ = Scene::kGameLoading;
+    else if (input.game && input.frame_late) scene_ = Scene::kGameFrameRescue;
+    else if (input.game) scene_ = Scene::kGame;
+    else if (input.camera) scene_ = Scene::kCamera;
+    else if (input.app_launch) scene_ = Scene::kAppLaunch;
+    else if (input.app_switch) scene_ = Scene::kAppSwitch;
+    else if (input.scrolling) scene_ = Scene::kScroll;
+    else if (input.interactive) scene_ = Scene::kInteractive;
+    else if (input.video) scene_ = Scene::kVideo;
+    else if (input.audio) scene_ = Scene::kAudio;
+    else if (input.battery_saver) scene_ = Scene::kBatterySaver;
+    else if (input.charging) scene_ = Scene::kCharging;
+    else if (input.idle) scene_ = Scene::kScreenOnIdle;
+    else scene_ = Scene::kDaily;
+    return scene_;
+  }
+
+  Scene scene() const { return scene_; }
+  bool charging() const { return charging_; }
+  bool battery_saver() const { return battery_saver_; }
+
+ private:
+  Scene scene_ = Scene::kBoot;
+  bool charging_ = false;
+  bool battery_saver_ = false;
+};
+
 struct GameDecision {
   Bottleneck bottleneck = Bottleneck::kNone;
   uint32_t rescue = 0;

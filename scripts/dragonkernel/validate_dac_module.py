@@ -38,7 +38,7 @@ def validate(module_zip: Path, checksum: Path) -> None:
         if b"libc++_shared.so" in binary:
             fail("daemon has an unbundled libc++ dependency")
         properties = archive.read("module.prop").decode("utf-8").splitlines()
-        if not {"id=dragon_dac", "version=0.6.0", "versionCode=6"} <= set(properties):
+        if not {"id=dragon_dac", "version=0.7.0", "versionCode=7"} <= set(properties):
             fail("module identity changed")
         config = set(archive.read("config/dac.conf").decode("utf-8").splitlines())
         for token in (

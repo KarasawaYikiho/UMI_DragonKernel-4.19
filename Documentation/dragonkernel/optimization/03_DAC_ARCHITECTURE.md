@@ -21,6 +21,10 @@ Android events / Power HAL / PSI / thermal / frame data
 - 不硬编码 CPU mask、sysfs 路径、频率、温度阈值或内核包名。
 - critical thermal、kernel safety、system critical semantics 始终高于用户 profile。
 
+## 场景选择
+
+事件源先汇总为一次原子快照，再由单一选择器按 `SAFE → THERMAL_EMERGENCY → BOOT → SCREEN_OFF → GAME_THERMAL → GAME_LOADING/FRAME_RESCUE/GAME → CAMERA → APP_LAUNCH/APP_SWITCH/SCROLL/INTERACTIVE → VIDEO/AUDIO → SCREEN_ON_IDLE/DAILY` 决定当前场景。充电与省电模式作为正交标志保留，避免覆盖游戏、媒体或交互语义；只有没有活动场景时才使用对应枚举。选择器不读取包名、不写资源；输入无效直接进入 SAFE。
+
 ## 统一模块
 
 不能安全纳入内核的 DAC、诊断、Joyose 云控隔离和配置放入一个标准 ROOT 管理器模块；Magisk、KernelSU、SukiSU 使用同一 ZIP。模块不是内核变体，也不改变 Original 内核机制。

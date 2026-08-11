@@ -260,6 +260,7 @@ for token in (
     "DailyBudgetController",
     "GameController",
     "ThermalGuard",
+    "SceneSelector",
     "kBinderGetFrozenInfo",
 ):
     if token not in dac_source:

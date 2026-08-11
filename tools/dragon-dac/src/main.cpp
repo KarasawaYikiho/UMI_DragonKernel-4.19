@@ -509,6 +509,20 @@ int run_self_test() {
   if (dragon::ThermalGuard::valid(invalid_thermal_config) ||
       invalid_thermal.update(1024, 0) != dragon::ThermalState::kCritical ||
       invalid_thermal.cap() != 0) return 1;
+  dragon::SceneSelector scenes;
+  dragon::SceneInputs scene_inputs;
+  if (scenes.update(scene_inputs) != dragon::Scene::kDaily) return 1;
+  scene_inputs.game = true;
+  scene_inputs.frame_late = true;
+  scene_inputs.battery_saver = true;
+  if (scenes.update(scene_inputs) != dragon::Scene::kGameFrameRescue ||
+      !scenes.battery_saver()) return 1;
+  scene_inputs.thermal_limited = true;
+  if (scenes.update(scene_inputs) != dragon::Scene::kGameThermal) return 1;
+  scene_inputs.thermal_emergency = true;
+  if (scenes.update(scene_inputs) != dragon::Scene::kThermalEmergency) return 1;
+  scene_inputs.valid = false;
+  if (scenes.update(scene_inputs) != dragon::Scene::kSafe) return 1;
   return 0;
 }
 
