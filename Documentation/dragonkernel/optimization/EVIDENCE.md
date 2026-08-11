@@ -141,3 +141,5 @@ The selector emits only an enum and has no package names or resource backend. In
 The daemon must also fail closed when event-loop descriptors, config watches or timer arming fail, close every descriptor on partial initialization, and rearm telemetry after a validated config reload. Actions compile both host and Android arm64 paths under `-Werror`.
 
 The module daemon takes a nonblocking lock scoped to its state directory, state temporary files reject symlinks, and install directories are root-only. Uninstall resolves `/proc/<pid>/exe` before signalling, so an unrelated process with the same name is not terminated.
+
+Joyose cgroup directories reject final-component symlinks. Membership exclusivity is checked before and immediately after BPF link creation, then on every low-frequency reconcile; any change detaches all owned links and enters SAFE. Concurrent migration remains an explicit device stress gate.

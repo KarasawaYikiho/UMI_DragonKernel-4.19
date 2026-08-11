@@ -334,7 +334,7 @@ class CloudIsolator {
       if (attachments_.count(path) != 0) continue;
       CloudAttachment attachment;
       const int cgroup_fd = open(("/sys/fs/cgroup" + path).c_str(),
-                                 O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+                                 O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
       if (cgroup_fd < 0) *error = "cannot open Joyose cgroup";
       if (cgroup_fd < 0 || !prepare(cgroup_fd, &attachment, error)) {
         if (cgroup_fd >= 0) close(cgroup_fd);
@@ -344,6 +344,13 @@ class CloudIsolator {
         return false;
       }
       close(cgroup_fd);
+      if (!cgroup_is_joyose_only(path)) {
+        release(&attachment);
+        clear();
+        *error = "Joyose cgroup membership changed during attach";
+        *status = "safe";
+        return false;
+      }
       attachments_.emplace(path, attachment);
     }
     *status = "blocked";
