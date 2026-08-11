@@ -25,6 +25,7 @@ PROBES = (
     ("battery", "for f in /sys/class/power_supply/battery/{capacity,voltage_now,current_now,temp,charge_full,charge_full_design,status}; do [ -r \"$f\" ] && printf '%s=' \"$f\" && cat \"$f\"; done"),
     ("memory", "cat /proc/meminfo; cat /proc/vmstat; cat /proc/swaps; for f in /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io /sys/block/zram0/mm_stat /sys/block/zram0/comp_algorithm /sys/block/zram0/disksize; do [ -r \"$f\" ] && printf '[%s]\\n' \"$f\" && cat \"$f\"; done"),
     ("freezer", "for f in /sys/fs/cgroup/cgroup.controllers /sys/fs/cgroup/cgroup.events /sys/fs/cgroup/cgroup.freeze /dev/freezer/freezer.state; do [ -r \"$f\" ] && printf '%s=' \"$f\" && cat \"$f\"; done; grep -i freezer /proc/cgroups || true"),
+    ("framework_freezer", "settings get global cached_apps_freezer 2>/dev/null || true; device_config get activity_manager_native_boot use_freezer 2>/dev/null || true; dumpsys activity settings 2>/dev/null | grep -iE 'freez|compact' || true"),
     ("storage", "mount | grep -E 'f2fs| /data '; for d in /sys/block/*/queue; do [ -d \"$d\" ] || continue; for f in scheduler wbt_lat_usec; do [ -r \"$d/$f\" ] && printf '%s=' \"$d/$f\" && cat \"$d/$f\"; done; done; for f in /sys/bus/platform/drivers/ufshcd/*/{rpm_lvl,spm_lvl,auto_hibern8,rpm_target_link_state,spm_target_link_state}; do [ -r \"$f\" ] && printf '%s=' \"$f\" && cat \"$f\"; done"),
     ("interrupts", "cat /proc/interrupts; for f in /proc/irq/*/smp_affinity_list /proc/irq/*/effective_affinity_list; do [ -r \"$f\" ] && printf '%s=' \"$f\" && cat \"$f\"; done"),
     ("wakeup_sources", "cat /sys/kernel/debug/wakeup_sources 2>/dev/null || { for d in /sys/class/wakeup/*; do [ -d \"$d\" ] || continue; for f in name active_count event_count total_time_ms prevent_suspend_time_ms; do [ -r \"$d/$f\" ] && printf '%s=' \"$d/$f\" && cat \"$d/$f\"; done; done; }"),
@@ -39,7 +40,7 @@ FORBIDDEN = (" setprop ", " chmod ", " chown ", " rm ", " mv ", " stop ", " star
 def self_test() -> None:
     keys = [key for key, _ in PROBES]
     assert len(keys) == len(set(keys))
-    assert {"identity", "joyose_package", "joyose_runtime", "thermal", "freezer"} <= set(keys)
+    assert {"identity", "joyose_package", "joyose_runtime", "thermal", "freezer", "framework_freezer"} <= set(keys)
     for _, command in PROBES:
         padded = f" {command} "
         assert not any(token in padded for token in FORBIDDEN), command

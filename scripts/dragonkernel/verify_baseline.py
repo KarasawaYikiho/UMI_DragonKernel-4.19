@@ -237,7 +237,7 @@ for path in (
         fail(f"optimization contract file missing: {path}")
 
 diagnostics_source = indexed_text("scripts/dragonkernel/diagnostics/capture_runtime.py")
-for token in ("joyose_package", "joyose_runtime", "read_only", "--self-test"):
+for token in ("joyose_package", "joyose_runtime", "framework_freezer", "read_only", "--self-test"):
     if token not in diagnostics_source:
         fail("read-only runtime diagnostics contract changed")
 
@@ -253,6 +253,8 @@ for token in (
     "cgroup_is_joyose_only",
     "BoostArbiter",
     "CpuBackend",
+    "FreezeStateMachine",
+    "kBinderGetFrozenInfo",
 ):
     if token not in dac_source:
         fail("Joyose cgroup BPF isolation contract changed")

@@ -3,6 +3,7 @@
 #include <linux/filter.h>
 #include <sys/epoll.h>
 #include <sys/inotify.h>
+#include <sys/ioctl.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
@@ -48,6 +49,15 @@ struct CloudAttachment {
   int ingress_link_fd = -1;
   int egress_link_fd = -1;
 };
+
+struct BinderFrozenStatusInfo {
+  uint32_t pid;
+  uint32_t sync_recv;
+  uint32_t async_recv;
+};
+
+constexpr unsigned long kBinderGetFrozenInfo =
+    _IOWR('b', 15, BinderFrozenStatusInfo);
 
 std::string trim(std::string value) {
   const auto first = value.find_first_not_of(" \t\r\n");
@@ -150,6 +160,15 @@ std::string json_escape(const std::string& value) {
 bool path_exists(const char* path) {
   struct stat status {};
   return stat(path, &status) == 0;
+}
+
+bool binder_freezer_supported() {
+  const int descriptor = open("/dev/binder", O_RDWR | O_CLOEXEC);
+  if (descriptor < 0) return false;
+  BinderFrozenStatusInfo information {static_cast<uint32_t>(getpid()), 0, 0};
+  const bool supported = ioctl(descriptor, kBinderGetFrozenInfo, &information) == 0;
+  close(descriptor);
+  return supported;
 }
 
 std::string parent_path(const std::string& path) {
@@ -373,6 +392,7 @@ std::map<std::string, bool> probe_backends() {
       {"schedtune", path_exists("/dev/stune")},
       {"cgroup", path_exists("/sys/fs/cgroup")},
       {"cgroup_bpf", path_exists("/sys/fs/cgroup/cgroup.controllers")},
+      {"binder_freezer", binder_freezer_supported()},
       {"kgsl", path_exists("/sys/class/kgsl/kgsl-3d0")},
       {"devfreq", path_exists("/sys/class/devfreq")},
       {"thermal", path_exists("/sys/class/thermal")},
@@ -441,6 +461,19 @@ int run_self_test() {
   if (!dragon::CpuBackend::valid_bounds(0, 1024) ||
       dragon::CpuBackend::valid_bounds(513, 512) ||
       dragon::CpuBackend::valid_bounds(0, 1025)) return 1;
+  dragon::FreezeStateMachine freezer;
+  for (const auto state : {dragon::FreezeState::kBackground,
+                           dragon::FreezeState::kCached,
+                           dragon::FreezeState::kFreezeDelay,
+                           dragon::FreezeState::kEligibilityCheck,
+                           dragon::FreezeState::kBinderPrepare,
+                           dragon::FreezeState::kFreezing,
+                           dragon::FreezeState::kFrozen,
+                           dragon::FreezeState::kThawing,
+                           dragon::FreezeState::kActive}) {
+    if (!freezer.transition(state)) return 1;
+  }
+  if (freezer.transition(dragon::FreezeState::kFrozen)) return 1;
   return 0;
 }
 

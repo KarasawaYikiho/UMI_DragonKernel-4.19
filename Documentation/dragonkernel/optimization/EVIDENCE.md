@@ -73,3 +73,23 @@ The live daemon currently owns no CPU resource and contains no CPU masks, freque
 Exercise overlapping acquire/release, expiry, thermal cap and invalid bounds in the native self-test, then require host and Android arm64 Actions plus module-content validation. Backend writes remain a post-optimization device gate.
 
 `3ac075e49702` passed Project contract and DAC module validation for the ownership arbiter and module `0.3.0` artifact.
+
+`93b7d887dadb` passed Project contract and DAC module validation for the disabled per-thread uclamp backend and module `0.4.0` artifact.
+
+## Freezer ownership core
+
+### Problem and current implementation
+
+The kernel exposes Binder and cgroup freezer mechanisms, while Android CachedAppOptimizer already owns cached-process lifecycle on supported ROMs. A second independent freezer would race framework visibility, services and Binder state.
+
+### Evidence and proposed change
+
+Kernel source includes `BINDER_FREEZE` and frozen-info ioctls. Add a strict no-write freeze/thaw state machine, read-only Binder capability probe and framework-freezer capture. Prefer the framework owner; keep DAC fallback disabled until complete process eligibility data is available.
+
+### Expected benefit, risk and rollback
+
+The state machine makes rollback and illegal transitions explicit without freezing any process. All five devices retain framework behavior; disabling or removing the module removes the observer.
+
+### Test plan
+
+Exercise the full legal transition chain, rollback-to-active and illegal transition rejection in the native self-test. Require host/Android arm64 Actions and module-content validation; actual freeze/thaw remains a post-optimization device gate.

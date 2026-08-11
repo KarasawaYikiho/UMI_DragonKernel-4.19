@@ -14,6 +14,43 @@ enum class BoostOwner {
   kFrameRescue,
 };
 
+enum class FreezeState {
+  kActive,
+  kBackground,
+  kCached,
+  kFreezeDelay,
+  kEligibilityCheck,
+  kBinderPrepare,
+  kFreezing,
+  kFrozen,
+  kThawing,
+};
+
+class FreezeStateMachine {
+ public:
+  FreezeState state() const { return state_; }
+
+  bool transition(FreezeState next) {
+    const bool allowed =
+        (state_ == FreezeState::kActive && next == FreezeState::kBackground) ||
+        (state_ == FreezeState::kBackground && next == FreezeState::kCached) ||
+        (state_ == FreezeState::kCached && next == FreezeState::kFreezeDelay) ||
+        (state_ == FreezeState::kFreezeDelay && next == FreezeState::kEligibilityCheck) ||
+        (state_ == FreezeState::kEligibilityCheck && next == FreezeState::kBinderPrepare) ||
+        (state_ == FreezeState::kBinderPrepare && next == FreezeState::kFreezing) ||
+        (state_ == FreezeState::kFreezing && next == FreezeState::kFrozen) ||
+        (state_ == FreezeState::kFrozen && next == FreezeState::kThawing) ||
+        (state_ == FreezeState::kThawing && next == FreezeState::kActive) ||
+        (state_ != FreezeState::kFrozen && state_ != FreezeState::kThawing &&
+         next == FreezeState::kActive);
+    if (allowed) state_ = next;
+    return allowed;
+  }
+
+ private:
+  FreezeState state_ = FreezeState::kActive;
+};
+
 class BoostArbiter {
  public:
   bool acquire(BoostOwner owner, uint32_t uclamp_min, uint64_t deadline_ns) {

@@ -16,3 +16,9 @@ ACTIVE -> BACKGROUND -> CACHED -> FREEZE_DELAY -> ELIGIBILITY_CHECK
 - 指标：次数、持续时间、失败、Binder block、thaw latency、CPU/wakeup 减少、swapin 与恢复 jank。
 
 完整功能矩阵通过前默认 dry-run，误冻或 backend 失败立即禁用 freezer 并解冻全部 DAC owner。
+
+## 当前实现
+
+- 严格状态机已实现并覆盖正常 freeze/thaw 链与冻结前回退；非法跨状态转换会被拒绝。
+- daemon 只读探测 Binder frozen-info ioctl；诊断脚本同时读取 framework CachedAppOptimizer 开关与 cgroup freezer 能力。
+- Android framework owner 可用时不建立第二个 freezer。DAC fallback 尚未接入进程资格信息，默认关闭且不执行冻结。
