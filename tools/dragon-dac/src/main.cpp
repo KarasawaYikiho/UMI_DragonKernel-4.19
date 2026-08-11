@@ -1,7 +1,11 @@
+#include <dirent.h>
+#include <linux/bpf.h>
+#include <linux/filter.h>
 #include <sys/epoll.h>
 #include <sys/inotify.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
@@ -10,11 +14,13 @@
 #include <cerrno>
 #include <cstdint>
 #include <csignal>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -31,7 +37,13 @@ struct Config {
   bool dry_run = true;
   int telemetry_interval_s = 5;
   std::string mode = "auto";
-  std::string cloud_control = "observe";
+  std::string cloud_control = "block";
+};
+
+struct CloudAttachment {
+  int cgroup_fd = -1;
+  int ingress_fd = -1;
+  int egress_fd = -1;
 };
 
 std::string trim(std::string value) {
@@ -141,10 +153,226 @@ std::string parent_path(const std::string& path) {
   return separator == std::string::npos ? "." : path.substr(0, separator);
 }
 
+bool is_decimal(const char* value) {
+  if (!*value) return false;
+  for (const char* cursor = value; *cursor; ++cursor) {
+    if (*cursor < '0' || *cursor > '9') return false;
+  }
+  return true;
+}
+
+std::string read_first_line(const std::string& path) {
+  std::ifstream input(path, std::ios::binary);
+  std::string line;
+  std::getline(input, line, '\0');
+  return line;
+}
+
+bool is_joyose_name(const std::string& name) {
+  constexpr char kPackage[] = "com.xiaomi.joyose";
+  return name == kPackage ||
+         (name.compare(0, sizeof(kPackage) - 1, kPackage) == 0 &&
+          name.size() > sizeof(kPackage) - 1 && name[sizeof(kPackage) - 1] == ':');
+}
+
+bool is_joyose_pid(int pid) {
+  return is_joyose_name(read_first_line("/proc/" + std::to_string(pid) + "/cmdline"));
+}
+
+std::string unified_cgroup_path(const std::string& content) {
+  std::istringstream input(content);
+  std::string line;
+  while (std::getline(input, line)) {
+    if (line.compare(0, 3, "0::") == 0) {
+      const std::string path = trim(line.substr(3));
+      if (!path.empty() && path[0] == '/' && path.find("..") == std::string::npos) return path;
+    }
+  }
+  return {};
+}
+
+bool scan_joyose_cgroups(std::set<std::string>* paths, int* process_count,
+                         std::string* error) {
+  DIR* directory = opendir("/proc");
+  if (!directory) {
+    *error = "cannot scan process table";
+    return false;
+  }
+  dirent* entry = nullptr;
+  while ((entry = readdir(directory)) != nullptr) {
+    if (!is_decimal(entry->d_name)) continue;
+    const int pid = std::atoi(entry->d_name);
+    if (!is_joyose_pid(pid)) continue;
+    ++*process_count;
+    std::ifstream input("/proc/" + std::to_string(pid) + "/cgroup");
+    std::ostringstream content;
+    content << input.rdbuf();
+    const std::string path = unified_cgroup_path(content.str());
+    if (path.empty()) {
+      closedir(directory);
+      *error = "Joyose has no isolated cgroup v2 path";
+      return false;
+    }
+    paths->insert(path);
+  }
+  closedir(directory);
+  return true;
+}
+
+bool cgroup_is_joyose_only(const std::string& path) {
+  std::ifstream input("/sys/fs/cgroup" + path + "/cgroup.procs");
+  int pid = 0;
+  bool found = false;
+  while (input >> pid) {
+    found = true;
+    if (!is_joyose_pid(pid)) return false;
+  }
+  return found;
+}
+
+int bpf_call(enum bpf_cmd command, union bpf_attr* attributes) {
+  return static_cast<int>(syscall(__NR_bpf, command, attributes, sizeof(*attributes)));
+}
+
+int load_drop_program(enum bpf_attach_type attach_type, std::string* error) {
+  bpf_insn instructions[2] {};
+  instructions[0].code = BPF_ALU64 | BPF_MOV | BPF_K;
+  instructions[0].dst_reg = BPF_REG_0;
+  instructions[0].imm = 0;
+  instructions[1].code = BPF_JMP | BPF_EXIT;
+  const char license[] = "GPL";
+  char verifier_log[4096] {};
+  union bpf_attr attributes {};
+  attributes.prog_type = BPF_PROG_TYPE_CGROUP_SKB;
+  attributes.expected_attach_type = attach_type;
+  attributes.insn_cnt = 2;
+  attributes.insns = reinterpret_cast<uint64_t>(instructions);
+  attributes.license = reinterpret_cast<uint64_t>(license);
+  attributes.log_buf = reinterpret_cast<uint64_t>(verifier_log);
+  attributes.log_size = sizeof(verifier_log);
+  attributes.log_level = 1;
+  const int descriptor = bpf_call(BPF_PROG_LOAD, &attributes);
+  if (descriptor < 0) *error = "cgroup BPF load failed: " + std::string(std::strerror(errno));
+  return descriptor;
+}
+
+bool attach_program(int cgroup_fd, int program_fd, enum bpf_attach_type attach_type,
+                    std::string* error) {
+  union bpf_attr attributes {};
+  attributes.target_fd = cgroup_fd;
+  attributes.attach_bpf_fd = program_fd;
+  attributes.attach_type = attach_type;
+  attributes.attach_flags = BPF_F_ALLOW_MULTI;
+  if (bpf_call(BPF_PROG_ATTACH, &attributes) == 0) return true;
+  *error = "cgroup BPF attach failed: " + std::string(std::strerror(errno));
+  return false;
+}
+
+void detach_program(int cgroup_fd, int program_fd, enum bpf_attach_type attach_type) {
+  if (cgroup_fd < 0 || program_fd < 0) return;
+  union bpf_attr attributes {};
+  attributes.target_fd = cgroup_fd;
+  attributes.attach_bpf_fd = program_fd;
+  attributes.attach_type = attach_type;
+  bpf_call(BPF_PROG_DETACH, &attributes);
+}
+
+class CloudIsolator {
+ public:
+  ~CloudIsolator() { clear(); }
+
+  bool reconcile(bool block, std::string* status, std::string* error) {
+    if (!block) {
+      clear();
+      *status = "observe";
+      return true;
+    }
+    std::set<std::string> desired;
+    int process_count = 0;
+    if (!scan_joyose_cgroups(&desired, &process_count, error)) {
+      clear();
+      *status = "safe";
+      return false;
+    }
+    if (process_count == 0) {
+      clear();
+      *status = "not-present";
+      return true;
+    }
+    for (const auto& path : desired) {
+      if (!cgroup_is_joyose_only(path)) {
+        clear();
+        *error = "Joyose cgroup is shared or unavailable";
+        *status = "safe";
+        return false;
+      }
+    }
+    for (auto iterator = attachments_.begin(); iterator != attachments_.end();) {
+      if (desired.count(iterator->first) == 0) {
+        release(&iterator->second);
+        iterator = attachments_.erase(iterator);
+      } else {
+        ++iterator;
+      }
+    }
+    for (const auto& path : desired) {
+      if (attachments_.count(path) != 0) continue;
+      CloudAttachment attachment;
+      attachment.cgroup_fd = open(("/sys/fs/cgroup" + path).c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+      if (attachment.cgroup_fd < 0 || !prepare(&attachment, error)) {
+        release(&attachment);
+        clear();
+        *status = "safe";
+        return false;
+      }
+      attachments_.emplace(path, attachment);
+    }
+    *status = "blocked";
+    error->clear();
+    return true;
+  }
+
+  void clear() {
+    for (auto& [path, attachment] : attachments_) {
+      (void)path;
+      release(&attachment);
+    }
+    attachments_.clear();
+  }
+
+  size_t count() const { return attachments_.size(); }
+
+ private:
+  static bool prepare(CloudAttachment* attachment, std::string* error) {
+    attachment->ingress_fd = load_drop_program(BPF_CGROUP_INET_INGRESS, error);
+    if (attachment->ingress_fd < 0 ||
+        !attach_program(attachment->cgroup_fd, attachment->ingress_fd,
+                        BPF_CGROUP_INET_INGRESS, error)) return false;
+    attachment->egress_fd = load_drop_program(BPF_CGROUP_INET_EGRESS, error);
+    if (attachment->egress_fd < 0 ||
+        !attach_program(attachment->cgroup_fd, attachment->egress_fd,
+                        BPF_CGROUP_INET_EGRESS, error)) return false;
+    return true;
+  }
+
+  static void release(CloudAttachment* attachment) {
+    detach_program(attachment->cgroup_fd, attachment->egress_fd, BPF_CGROUP_INET_EGRESS);
+    detach_program(attachment->cgroup_fd, attachment->ingress_fd, BPF_CGROUP_INET_INGRESS);
+    for (const int descriptor : {attachment->egress_fd, attachment->ingress_fd,
+                                 attachment->cgroup_fd}) {
+      if (descriptor >= 0) close(descriptor);
+    }
+    *attachment = CloudAttachment {};
+  }
+
+  std::map<std::string, CloudAttachment> attachments_;
+};
+
 std::map<std::string, bool> probe_backends() {
   return {
       {"schedtune", path_exists("/dev/stune")},
       {"cgroup", path_exists("/sys/fs/cgroup")},
+      {"cgroup_bpf", path_exists("/sys/fs/cgroup/cgroup.controllers")},
       {"kgsl", path_exists("/sys/class/kgsl/kgsl-3d0")},
       {"devfreq", path_exists("/sys/class/devfreq")},
       {"thermal", path_exists("/sys/class/thermal")},
@@ -167,6 +395,7 @@ bool atomic_write(const std::string& path, const std::string& data) {
 }
 
 std::string status_json(const std::string& scene, const Config& config,
+                        const std::string& cloud_status, size_t cloud_cgroups,
                         const std::string& error,
                         const std::map<std::string, bool>& backends) {
   std::ostringstream output;
@@ -174,6 +403,8 @@ std::string status_json(const std::string& scene, const Config& config,
          << "  \"enabled\": " << (config.enabled ? "true" : "false") << ",\n"
          << "  \"dry_run\": " << (config.dry_run ? "true" : "false") << ",\n"
          << "  \"cloud_control\": \"" << config.cloud_control << "\",\n"
+         << "  \"cloud_status\": \"" << cloud_status << "\",\n"
+         << "  \"cloud_cgroups\": " << cloud_cgroups << ",\n"
          << "  \"error\": \"" << json_escape(error) << "\",\n"
          << "  \"owned_resources\": [],\n  \"backends\": {";
   bool first = true;
@@ -192,6 +423,12 @@ int run_self_test() {
   if (!parse_bool("0", &value) || value) return 1;
   if (parse_bool("invalid", &value)) return 1;
   if (json_escape("a\"b\\c\n") != "a\\\"b\\\\c\\n") return 1;
+  if (!is_joyose_name("com.xiaomi.joyose") ||
+      !is_joyose_name("com.xiaomi.joyose:worker") ||
+      is_joyose_name("com.xiaomi.joyose.other")) return 1;
+  if (unified_cgroup_path("2:cpu:/x\n0::/uid_1000/pid_12\n") !=
+      "/uid_1000/pid_12") return 1;
+  if (!unified_cgroup_path("0::/../unsafe\n").empty()) return 1;
   return 0;
 }
 
@@ -200,24 +437,54 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   Config config;
   std::string error;
   bool valid = load_config(config_path, &config, &error);
+  bool config_valid = valid;
   if (force_dry_run) config.dry_run = true;
-  if (valid && config.cloud_control == "block") {
-    valid = false;
-    error = "cloud-control block backend is not validated";
-  }
-  std::string scene = valid && config.enabled && config.mode != "safe" ? "BOOT" : "SAFE";
-  const auto backends = probe_backends();
-  if (!atomic_write(state_path, status_json(scene, config, error, backends))) {
-    std::cerr << "cannot write state: " << std::strerror(errno) << '\n';
-    return 1;
-  }
-
   sigset_t signal_mask;
   sigemptyset(&signal_mask);
   sigaddset(&signal_mask, SIGINT);
   sigaddset(&signal_mask, SIGTERM);
   sigaddset(&signal_mask, SIGHUP);
   if (sigprocmask(SIG_BLOCK, &signal_mask, nullptr) != 0) return 1;
+  const auto backends = probe_backends();
+  CloudIsolator cloud;
+  std::string cloud_status = valid ? "pending" : "safe";
+  if (valid) valid = cloud.reconcile(config.cloud_control == "block", &cloud_status, &error);
+  std::string scene = valid && config.enabled && config.mode != "safe"
+                          ? "BOOT"
+                          : (valid && cloud_status == "blocked" ? "CLOUD_ONLY" : "SAFE");
+  std::string last_state;
+  auto publish = [&]() {
+    const std::string state = status_json(scene, config, cloud_status, cloud.count(), error, backends);
+    if (state == last_state) return true;
+    if (!atomic_write(state_path, state)) return false;
+    last_state = state;
+    return true;
+  };
+  auto reload = [&]() {
+    Config next;
+    std::string next_error;
+    if (!load_config(config_path, &next, &next_error)) {
+      config_valid = false;
+      valid = false;
+      cloud.clear();
+      cloud_status = "safe";
+      error = next_error;
+      scene = "SAFE";
+      return;
+    }
+    config_valid = true;
+    config = next;
+    if (force_dry_run) config.dry_run = true;
+    valid = cloud.reconcile(config.cloud_control == "block", &cloud_status, &error);
+    scene = valid && config.enabled && config.mode != "safe"
+                ? "DAILY"
+                : (valid && cloud_status == "blocked" ? "CLOUD_ONLY" : "SAFE");
+  };
+  if (!publish()) {
+    std::cerr << "cannot write state: " << std::strerror(errno) << '\n';
+    return 1;
+  }
+
   const int signal_fd = signalfd(-1, &signal_mask, SFD_CLOEXEC | SFD_NONBLOCK);
   const int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
   const int inotify_fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
@@ -248,60 +515,40 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
         signalfd_siginfo info {};
         if (read(signal_fd, &info, sizeof(info)) != static_cast<ssize_t>(sizeof(info))) continue;
         if (info.ssi_signo == SIGHUP) {
-          Config next;
-          std::string next_error;
-          if (load_config(config_path, &next, &next_error)) {
-            config = next;
-            if (force_dry_run) config.dry_run = true;
-            if (config.cloud_control == "block") {
-              error = "cloud-control block backend is not validated";
-              scene = "SAFE";
-            } else {
-              error.clear();
-              scene = config.enabled && config.mode != "safe" ? "DAILY" : "SAFE";
-            }
-          } else {
-            error = next_error;
-            scene = "SAFE";
-          }
-          atomic_write(state_path, status_json(scene, config, error, backends));
+          reload();
+          publish();
         } else {
           running = false;
         }
       } else if (events[index].data.fd == inotify_fd) {
         char buffer[512];
         while (read(inotify_fd, buffer, sizeof(buffer)) > 0) {}
-        Config next;
-        std::string next_error;
-        if (load_config(config_path, &next, &next_error)) {
-          config = next;
-          if (force_dry_run) config.dry_run = true;
-          if (config.cloud_control == "block") {
-            error = "cloud-control block backend is not validated";
-            scene = "SAFE";
-          } else {
-            error.clear();
-            scene = config.enabled && config.mode != "safe" ? "DAILY" : "SAFE";
-          }
-        } else {
-          error = next_error;
-          scene = "SAFE";
-        }
-        atomic_write(state_path, status_json(scene, config, error, backends));
+        reload();
+        publish();
       } else if (events[index].data.fd == timer_fd) {
         uint64_t expirations = 0;
         const ssize_t timer_read = read(timer_fd, &expirations, sizeof(expirations));
-        if (timer_read != static_cast<ssize_t>(sizeof(expirations)) && errno != EAGAIN) {
+        if (timer_read < 0 && errno == EAGAIN) continue;
+        if (timer_read != static_cast<ssize_t>(sizeof(expirations))) {
+          cloud.clear();
+          cloud_status = "safe";
           error = "timerfd read failed";
           scene = "SAFE";
-          atomic_write(state_path, status_json(scene, config, error, backends));
+        } else if (config_valid) {
+          valid = cloud.reconcile(config.cloud_control == "block", &cloud_status, &error);
+          scene = valid && config.enabled && config.mode != "safe"
+                      ? "DAILY"
+                      : (valid && cloud_status == "blocked" ? "CLOUD_ONLY" : "SAFE");
         }
+        publish();
       }
     }
   }
 
+  cloud.clear();
+  cloud_status = "stopped";
   scene = "STOPPED";
-  atomic_write(state_path, status_json(scene, config, error, backends));
+  publish();
   close(epoll_fd);
   close(inotify_fd);
   close(timer_fd);

@@ -13,7 +13,7 @@
 | I/O | block scheduler、BFQ/WBT、F2FS mounts/iostat、UFS PM/link/hibern8 | 待采集 |
 | IRQ/待机 | interrupts/affinity、wakeup sources、suspend/idle residency | 待采集 |
 | Android | Power HAL/ADPF hints、前台状态、Binder freezer、SurfaceFlinger frame data | 待采集 |
-| Xiaomi 控制面 | Joyose、本地性能服务、云配置来源、调度/touch/game/thermal 写入目标与频率 | 待采集 |
+| Xiaomi 控制面 | Joyose、本地性能服务、云配置来源、调度/touch/game/thermal 写入目标与频率 | 静态边界已确认；运行时待采集 |
 
 ## Joyose 云控边界
 

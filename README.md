@@ -13,7 +13,7 @@
 
 - WALT、schedutil、UCLAMP、Binder 优先级、输入 boost 与全局 boost 的机制级调度修正
 - 删除 Xiaomi `thermal_message` 用户态云控邮箱；保留 thermal zone、TSENS、BCL、LMH、冷却设备和硬件保护
-- Joyose 调度等云控已纳入 DAC 所有权审计；未验证远程拦截点前只观察、不启用阻断
+- Joyose 调度、游戏/性能、温控和内存云控由统一模块隔离；共享 UID、停包、停组件和猜测域名方案均被排除
 - Baseband-guard 作为所有变体共享的防格机 LSM；它不是 Root 变体，并有独立功能矩阵
 - 电池解容只保留自动学习到的高于原厂容量；启动容量按机型确定，手动写入仍受原厂值限制，电压、电流、认证和温度保护不变
 - GitHub Actions 五机型矩阵、单设备快速构建、ccache、可复现 Image/AnyKernel3 候选包

@@ -28,10 +28,12 @@ Android events / Power HAL / PSI / thermal / frame data
 - 文件名：`UMI_<yyyyMMddHHmm>_DAC_Module_Build.zip`
 - 时间戳：与同次镜像 Release 相同，时区 `Asia/Shanghai`
 - daemon 不依赖特定 ROOT manager API；安装/启动 wrapper 可识别通用模块环境。
-- 默认关闭写入，首次启动只 probe/dry-run；配置错误或 crash loop 自动恢复 vendor defaults。
-- 未验证的 Joyose block 配置会进入 SAFE；当前阶段只允许 observe。
+- 性能策略默认关闭并保持 dry-run；Joyose 远端网络隔离独立启用。
+- 云控隔离只附加到进程独占的既有 cgroup v2 叶节点，不移动任务；共享节点、BPF 不可用或校验失败立即进入 SAFE。
 - Recovery 默认不启动；卸载必须解冻全部任务并恢复 DAC 拥有的 knob。
 
 ## Xiaomi 云控
 
-模块对 Joyose 采用“远程云控隔离 + 本地兼容保留 + 写入所有权仲裁”，不以删包/停服务作为默认方案。云配置拦截点必须来自 ROM 运行时审计；未知域名、文件或 property 不得猜测。
+静态 ROM 证据确认 Joyose 同时包含远端下发以及调度、游戏/性能、温控和内存策略，并使用共享系统 UID；默认进程还混合远端与本地职责。因此禁止按 UID 断网、删包、停组件或猜测域名。
+
+DAC 扫描 Joyose 进程的既有 cgroup v2 路径，仅在 `cgroup.procs` 全部属于 Joyose 时附加 ingress/egress cgroup BPF 丢包程序。卸载、切换 observe 或失败时只卸载自身程序；Lineage 无该包时无操作。本地 Binder、Unix socket 与策略代码保留，后续写入仍需 DAC 所有权仲裁。

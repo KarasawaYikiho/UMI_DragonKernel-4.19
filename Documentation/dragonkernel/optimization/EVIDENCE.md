@@ -44,4 +44,6 @@ The next run passed host and Android arm64 builds, then exposed a validation wor
 
 `8df152184620` passed Project contract and DAC module validation. The downloaded module artifact passed its portable checksum, fixed inventory and modes, AArch64 ELF, no-external-libc++ and safe-default checks. Six fast Original device builds for the unchanged kernel snapshot also completed successfully.
 
-The Hyper3 static audit confirms Joyose is not thermal-only: it has boot and network capability plus scheduler, game/performance, thermal and memory policy signals. It uses a shared system UID, so UID-wide network blocking is rejected because it could affect unrelated system services. Cloud isolation remains observe-only until the internal remote-delivery/local-policy boundary is isolated without disabling required local behavior.
+The Hyper3 static audit confirms Joyose is not thermal-only: it has boot and network capability plus scheduler, game/performance, thermal and memory policy signals. It uses a shared system UID, so UID-wide network blocking is rejected because it could affect unrelated system services.
+
+Further component analysis found two process domains and mixed remote/local responsibilities in the default process. Component disabling is therefore also rejected. The implemented boundary attaches ingress/egress drop programs only to existing cgroup v2 leaves whose process inventory is exclusively Joyose; it never moves tasks or changes CPU controller membership. Missing, shared or unsupported cgroups fail SAFE, while Lineage without Joyose is a no-op.

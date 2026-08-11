@@ -243,8 +243,17 @@ dac_source = indexed_text("tools/dragon-dac/src/main.cpp")
 for token in ("epoll_create1", "timerfd_create", "signalfd", "inotify_init1", "owned_resources"):
     if token not in dac_source:
         fail("DAC event-loop skeleton contract changed")
+for token in (
+    "BPF_PROG_TYPE_CGROUP_SKB",
+    "BPF_CGROUP_INET_INGRESS",
+    "BPF_CGROUP_INET_EGRESS",
+    "BPF_PROG_DETACH",
+    "cgroup_is_joyose_only",
+):
+    if token not in dac_source:
+        fail("Joyose cgroup BPF isolation contract changed")
 module_config = indexed_text("tools/dragon-dac/module/config/dac.conf")
-for token in ("dac.enabled=false", "dac.dry_run=true", "dac.cloud_control.remote=observe"):
+for token in ("dac.enabled=false", "dac.dry_run=true", "dac.cloud_control.remote=block"):
     if token not in module_config:
         fail("DAC safe default contract changed")
 

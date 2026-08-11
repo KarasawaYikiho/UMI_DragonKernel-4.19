@@ -14,4 +14,4 @@ if [ ! -f "$install_root/config/dac.conf" ]; then
 fi
 chmod 0700 "$MODPATH/bin/dragon-dac"
 chmod 0600 "$install_root/config/dac.conf"
-ui_print "- Installed disabled and dry-run by default"
+ui_print "- Performance policy disabled; Joyose remote network isolation enabled"
