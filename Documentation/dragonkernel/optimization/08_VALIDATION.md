@@ -24,6 +24,10 @@
 
 出现 boot/panic/reboot/ANR/Binder/audio/camera/call/alarm/notification/network/suspend/charging/FPS/P99 回归，立即回滚该单项并返回优化阶段。
 
+## Release 前置审查
+
+实机门禁通过不直接进入发布。最终 SHA 还必须通过[安全与冲突审查](09_RELEASE_REVIEW.md)；修复任何发现后，受影响的静态、CI、产物和实机证据必须重跑。
+
 ## 单项 Evidence
 
 每个改变必须记录 Problem、Current implementation、Evidence、Proposed change、Expected benefit、Risk、Compatibility、Rollback、Test plan；没有设备 trace 时不得把理论判断写成性能完成。

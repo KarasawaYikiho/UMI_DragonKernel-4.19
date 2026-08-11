@@ -23,7 +23,7 @@
 
 源代码快照 `08f410eb5242` 的 Project contract、Original、KernelSU、SukiSU 与独立 BBG 公共功能矩阵通过，共 20/20。旧 BBG 组合证据因错误依赖 KernelSU/SUSFS 已作废。Original/umi 的既有同 SHA 复现和五机型 ROM 结构配对仍须随最终 Image 重跑。
 
-这些结果只证明源码、构建产物和 ROM 结构门禁有效，不代表已启动、兼容、稳定或可发布。调度、温控、电池、ROM 结构和快速构建全部冻结后，才进入实机验证。
+这些结果只证明源码、构建产物和 ROM 结构门禁有效，不代表已启动、兼容、稳定或可发布。调度、温控、电池、ROM 结构和快速构建全部冻结后才进入实机验证；正式发布前还必须通过最终 SHA 的安全与冲突审查。
 
 ## 文档
 
@@ -34,3 +34,4 @@
 - [私有输入规则](Documentation/dragonkernel/PRIVATE_INPUTS.md)
 - [机器可读基线](Documentation/dragonkernel/baseline.json)
 - [优化审计与验证](Documentation/dragonkernel/optimization/00_REPO_AUDIT.md)
+- [Release 安全与冲突审查](Documentation/dragonkernel/optimization/09_RELEASE_REVIEW.md)

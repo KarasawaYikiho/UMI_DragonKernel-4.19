@@ -219,6 +219,7 @@ for path in (
     "Documentation/dragonkernel/optimization/06_GAME_CONTROLLER.md",
     "Documentation/dragonkernel/optimization/07_THERMAL.md",
     "Documentation/dragonkernel/optimization/08_VALIDATION.md",
+    "Documentation/dragonkernel/optimization/09_RELEASE_REVIEW.md",
     "scripts/dragonkernel/diagnostics/capture_runtime.py",
     "scripts/dragonkernel/package_dac_module.py",
     "scripts/dragonkernel/validate_dac_module.py",
