@@ -169,3 +169,13 @@ Normal `SIGTERM` exits successfully, so uninstall is not restarted. Recovery rem
 Require Project contract plus host/Android arm64 compilation, native self-tests, deterministic packaging and watchdog-token validation in Actions. Device crash injection and boot/uninstall behavior remain in the post-optimization module regression gate.
 
 `45dccdd7d84f` passed Project contract run `31488107378` and DAC module validation run `31488107379`. The downloaded artifact matched its Actions digest; module `0.8.0` then passed its portable checksum, fixed inventory/modes, AArch64 ELF, safe defaults and watchdog contract. The temporary download was removed.
+
+## Device-gate capture coverage
+
+### Problem, evidence and proposed change
+
+The read-only capture covered kernel mechanisms but omitted the runtime owner evidence required before enabling DAC: task-profile membership, foreground/display timing, Power HAL, LMKD, expanded-capacity learning, DAC health and loaded BBG state. Add read-only probes sourced from Android services and the repository's exported fuel-gauge interfaces; keep all raw output in the ignored private directory.
+
+### Risk, compatibility, rollback and test plan
+
+The collector writes no device node and treats unavailable Hyper3/Lineage capabilities as data, not failure. Original uses shell-readable evidence; an explicit `--su` mode supports the same static probes after a Root variant is installed. It does not enable a DAC backend or begin A/B. Project contract self-tests unique probe names, required coverage, command construction and forbidden mutating shell tokens; removing the probe entries is the complete rollback.
