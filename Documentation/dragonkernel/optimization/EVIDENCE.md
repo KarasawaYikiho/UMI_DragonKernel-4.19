@@ -14,10 +14,13 @@
 | 预实机标准安全扫描 | `d51a28b3-a9b4-4201-ab33-00472cf25b51` 在 `15e26be967d5` 报告 BBG High 与 DAC Medium 两项 |
 | 安全修复 | `c87b3a7694df` 修正完整 boot-chain 保护与 Joyose UID+cmdline 身份；Project、DAC 0.8.1 与四组五机型矩阵 20/20 通过 |
 | Magisk 路径 | `396fa620b131` 的五机型同 SHA Original 转包 5/5；下载后逐机型核对 13 成员包、Root-none/BBG、ARM64 与实际 Image SHA 全部通过 |
+| 代表 Root/BBG 产物 | `c87b3a7694df` 的 KernelSU、SukiSU、BBG/umi 外层 ZIP、21/21 内部 SHA、配置、ARM64、DTB/DTBO/模块与日志通过 |
+| 当前可复现性 | `dbd46913cb65` 两次 Original/umi Action 的 Image、候选 ZIP、配置与确定性成员一致；仅运行日志不同 |
+| 当前 ROM 结构 | `396fa620b131` 五机型 Original Artifact 与对应公开 ROM 档案结构配对 5/5 通过 |
 
 ## 当前失效与进行中
 
-BBG 修复改变公共内核输入，`11067a49997e` 的 20 个内核产物仅保留为历史证据。`c87b3a7694df` 的四组五机型矩阵与 `396fa620b131` 的 Original/BBG/Magisk 证据已通过；仍需其余代表 Artifact、ROM 结构与可复现复核。
+BBG 修复改变公共内核输入，`11067a49997e` 的 20 个内核产物仅保留为历史证据。安全修复后的矩阵、代表 Artifact、Magisk 同 SHA 转包、当前 ROM 结构配对与精确 SHA 可复现检查均已通过。
 
 ## 尚未证明
 

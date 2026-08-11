@@ -2,15 +2,15 @@
 
 | 能力 | 当前状态 | 未完成门禁 |
 |---|---|---|
-| 五机型内核与 ROM 结构 | Actions/结构校验已通过旧冻结输入 | 安全修复后重跑最终矩阵与配对 |
+| 五机型内核与 ROM 结构 | 安全修复后矩阵、代表 Artifact 与五机型 ROM 结构配对通过 | 优化冻结后的实机启动与硬件回归 |
 | 调度与 boost | 机制和构建门禁完成 | 实机所有权、桌面/超级岛 A/B |
 | 标准温控与充电保护 | 保留并通过构建门禁 | 实机热负载、充电、过热回归 |
 | Joyose 远程云控隔离 | DAC `0.8.1` 已通过编译和模块 CI | 实机 UID/cgroup、流量和本地功能 |
 | 电池解容 | 自动学习上限解除；启动值按型号 | 实机 FCC 学习、持久化和保护回归 |
-| Original/KernelSU/SukiSU | 安全修复 SHA 的 Original/KernelSU/SukiSU/BBG 矩阵 20/20 | 代表 Artifact、ROM 配对与可复现复核 |
+| Original/KernelSU/SukiSU | 安全修复 SHA 的矩阵 20/20；三类代表 Artifact 复核通过 | 实机 Root/隐藏与 BBG 回归 |
 | Magisk | 五机型同 SHA Original 转包与下载交叉校验 5/5；私有 boot 结构校验已实现 | ROM 专属修补与三层隐藏实机验证 |
 | Baseband-guard | 公共 LSM；启动链缺口已修 | 全矩阵与实机写保护/恢复 |
-| 可刷候选包 | Image-only AnyKernel3 已实现 | Recovery/Fastboot 刷写与回滚 |
+| 可刷候选包 | Image-only AnyKernel3 已实现；Original/umi 精确 SHA 可复现 | Recovery/Fastboot 刷写与回滚 |
 | 安全与冲突审查 | 预实机扫描发现两项并已修 | 最终 SHA 全仓、差异、供应链、冲突复审 |
 | 正式 Release | 未开始 | 所有最终 SHA 构建和实机门禁 |
 
