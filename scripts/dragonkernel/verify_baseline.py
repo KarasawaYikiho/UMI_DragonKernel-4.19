@@ -89,8 +89,6 @@ if "arch/arm64/configs/vendor/dragonkernel-kernelsu.config" not in tracked:
     fail("missing KernelSU config fragment")
 if "arch/arm64/configs/vendor/dragonkernel-sukisu.config" not in tracked:
     fail("missing SukiSU config fragment")
-if "arch/arm64/configs/vendor/dragonkernel-bbg.config" not in tracked:
-    fail("missing BBG config fragment")
 
 devices = data["device_family"]["devices"]
 if len({device["codename"] for device in devices}) != len(devices):
@@ -271,18 +269,15 @@ if hashlib.sha256((ROOT / bbg_patch).read_bytes()).hexdigest() != bbg.get(
 ):
     fail("Baseband Guard hardening patch hash mismatch")
 
-bbg_config = indexed_text("arch/arm64/configs/vendor/dragonkernel-bbg.config")
+common_config = indexed_text("arch/arm64/configs/vendor/xiaomi/sm8250-common.config")
 for token in (
     "CONFIG_BBG=y",
     "CONFIG_BBG_BLOCK_BOOT=y",
     "# CONFIG_BBG_BLOCK_RECOVERY is not set",
     "baseband_guard",
 ):
-    if token not in bbg_config:
-        fail("BBG config contract changed")
-common_config = indexed_text("arch/arm64/configs/vendor/xiaomi/sm8250-common.config")
-if "# CONFIG_BBG is not set" not in common_config:
-    fail("BBG must remain disabled outside its explicit validation overlay")
+    if token not in common_config:
+        fail("BBG must remain a common anti-format feature")
 for token in ("CONFIG_UCLAMP_TASK=y", "CONFIG_UCLAMP_TASK_GROUP=y"):
     if token not in common_config:
         fail("utilization clamping config contract changed")
@@ -316,6 +311,12 @@ if set(root_hiding.get("required_variants", [])) != expected_variants - {"origin
     fail("root hiding must cover every Root variant")
 if root_hiding.get("validation_layers") != ["kernel", "manager", "application"]:
     fail("root hiding validation layers changed")
+if data.get("common_security", {}).get("bbg") != {
+    "role": "common-anti-format-feature",
+    "root_dependency": False,
+    "separate_validation": True,
+}:
+    fail("BBG must not become a Root variant")
 
 toolchain = data["toolchain"]
 if not re.fullmatch(r"[0-9a-f]{40}", toolchain["commit"]):
@@ -361,6 +362,7 @@ if anykernel3 != {
 magisk_validator = indexed_text("scripts/dragonkernel/validate_magisk_artifact.sh")
 for token in (
     "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
+    "CONFIG_BBG=y",
     '[[ "$status" -eq 1 ]]',
     'cmp -s "$template_ramdisk" "$output_ramdisk"',
 ):
@@ -424,10 +426,64 @@ if fast_workflow not in tracked:
 fast_source = (ROOT / fast_workflow).read_text(encoding="utf-8")
 if "actions/cache@v5" not in fast_source or 'USE_CCACHE: "1"' not in fast_source:
     fail("targeted fast validation must use the compiler cache")
+if "options: [original, kernelsu, sukisu]" not in fast_source:
+    fail("fast validation variants changed")
+if "scripts/dragonkernel/prepare_bbg.sh" not in fast_source:
+    fail("fast validation must include the common BBG feature")
+if re.search(r"options:.*bbg|inputs\.variant.*bbg", fast_source):
+    fail("BBG must not appear as a fast-build variant")
+
+variant_workflows = (
+    ".github/workflows/original-validation.yml",
+    ".github/workflows/kernelsu-validation.yml",
+    ".github/workflows/sukisu-validation.yml",
+)
+for workflow in variant_workflows:
+    if "scripts/dragonkernel/prepare_bbg.sh" not in indexed_text(workflow):
+        fail(f"variant workflow lacks common BBG preparation: {workflow}")
+
+bbg_workflow_source = indexed_text(".github/workflows/bbg-validation.yml")
+for token in (
+    "scripts/dragonkernel/prepare_bbg.sh",
+    "scripts/dragonkernel/build_original.sh",
+    "bbg-feature-${{ matrix.device }}",
+):
+    if token not in bbg_workflow_source:
+        fail("independent BBG feature workflow changed")
+for forbidden in (
+    "prepare_susfs.sh",
+    "prepare_sukisu.sh",
+    "build_bbg.sh",
+    "OUT_ROOT }}/bbg/",
+):
+    if forbidden in bbg_workflow_source:
+        fail("BBG feature workflow depends on a Root path")
+
+package_source = indexed_text("scripts/dragonkernel/package_anykernel.py")
+if '"bbg":' in package_source:
+    fail("BBG must not be an AnyKernel variant")
+if (ROOT / "scripts/dragonkernel/build_bbg.sh").exists():
+    fail("BBG must not have a variant build wrapper")
+if "scripts/dragonkernel/build_bbg.sh" in indexed_text(
+    ".github/workflows/project-contract.yml"
+):
+    fail("project contract still exposes a BBG variant")
 
 build_source = (ROOT / "scripts/dragonkernel/build_kernel.sh").read_text(
     encoding="utf-8"
 )
+if "original|kernelsu|sukisu)" not in build_source:
+    fail("kernel variant contract changed")
+for forbidden in ("original|kernelsu|sukisu|bbg", '"$variant" == bbg', "dragonkernel-bbg.config"):
+    if forbidden in build_source:
+        fail("BBG must not be a kernel variant")
+for token in (
+    "expected_bbg_commit=$(json_value upstreams baseband_guard commit)",
+    "apply --reverse --check",
+    "Baseband Guard hardening patch is not applied",
+):
+    if token not in build_source:
+        fail("common BBG source gate changed")
 if "SOURCE_DATE_EPOCH=$(git -C \"$root\" show -s --format=%ct HEAD)" not in build_source:
     fail("kernel builds must use the commit epoch")
 for token in (
@@ -448,6 +504,11 @@ for token in (
     "CONFIG_QTI_BCL_PMIC5=y",
     "CONFIG_QTI_BCL_SOC_DRIVER=y",
     "CONFIG_QTI_THERMAL_LIMITS_DCVS=y",
+    "CONFIG_BBG=y",
+    "CONFIG_BBG_BLOCK_BOOT=y",
+    "# CONFIG_BBG_BLOCK_RECOVERY is not set",
+    "baseband_guard",
+    "bbg_init",
 ):
     if token not in build_source:
         fail("kernel build configuration gate changed")

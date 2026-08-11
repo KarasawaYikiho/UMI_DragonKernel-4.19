@@ -11,7 +11,7 @@
 | KernelSU + SUSFS | 五机型构建通过 | Root、管理器、注入与应用检测 |
 | SukiSU + KPM + SUSFS | 五机型构建通过 | Root、KPM、管理器、注入与应用检测 |
 | Magisk | 结构链已实现 | 每机型专属模板与三层隐藏验证 |
-| BBG | 五机型构建通过 | 写保护、正常更新和恢复路径 |
+| Baseband-guard 防格机 | 公共功能已修正 | 五机型独立矩阵及各变体配置/对象复核 |
 | Image-only 候选 ZIP | 构建通过 | Recovery 刷写与回滚 |
 | `Hyper3` ROM 结构 | `umi`/`cmi`/`cas` 通过 | 最终提交重新配对 |
 | `Lineage_**Latest**` ROM 结构 | `thyme`/`apollo` 通过 | 最终提交重新配对 |

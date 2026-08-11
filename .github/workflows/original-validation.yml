@@ -20,6 +20,7 @@ on:
       - "security/**"
       - "sound/**"
       - "virt/**"
+      - "patches/bbg/**"
       - "scripts/dragonkernel/**"
       - "Documentation/dragonkernel/baseline.json"
       - "Kconfig"
@@ -53,6 +54,9 @@ jobs:
       - name: Fetch locked toolchain
         shell: bash
         run: scripts/dragonkernel/prepare_toolchain.sh "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Apply locked BBG hardening patch
+        run: scripts/dragonkernel/prepare_bbg.sh
 
       - name: Build original kernel
         run: scripts/dragonkernel/build_original.sh "${{ matrix.device }}"

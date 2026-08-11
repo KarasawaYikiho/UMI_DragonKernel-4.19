@@ -21,6 +21,7 @@ on:
       - "sound/**"
       - "virt/**"
       - "patches/susfs/**"
+      - "patches/bbg/**"
       - "scripts/dragonkernel/**"
       - "Documentation/dragonkernel/baseline.json"
       - "Kconfig"
@@ -57,6 +58,9 @@ jobs:
 
       - name: Apply locked SUSFS patches
         run: scripts/dragonkernel/prepare_susfs.sh
+
+      - name: Apply locked BBG hardening patch
+        run: scripts/dragonkernel/prepare_bbg.sh
 
       - name: Build KernelSU kernel
         run: scripts/dragonkernel/build_kernelsu.sh "${{ matrix.device }}"

@@ -30,6 +30,7 @@ case "$1" in
   apollo) symbol=CONFIG_MACH_XIAOMI_APOLLO ;;
 esac
 grep -qx "$symbol=y" "$config"
+grep -qx 'CONFIG_BBG=y' "$config"
 test "$(od -An -j56 -N4 -tx1 "$image" | tr -d ' \n')" = 41524d64
 
 "$root/scripts/dragonkernel/repack_boot.sh" "$template" "$image" "$output"

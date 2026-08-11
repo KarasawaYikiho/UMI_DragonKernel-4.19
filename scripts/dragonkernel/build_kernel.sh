@@ -4,12 +4,12 @@ set -euo pipefail
 variant=${1:-}
 device=${2:-}
 case "$variant" in
-  original|kernelsu|sukisu|bbg) ;;
-  *) echo "usage: $0 {original|kernelsu|sukisu|bbg} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
+  original|kernelsu|sukisu) ;;
+  *) echo "usage: $0 {original|kernelsu|sukisu} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
 esac
 case "$device" in
   umi|cmi|cas|thyme|apollo) ;;
-  *) echo "usage: $0 {original|kernelsu|sukisu|bbg} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
+  *) echo "usage: $0 {original|kernelsu|sukisu} {umi|cmi|cas|thyme|apollo}" >&2; exit 2 ;;
 esac
 
 root=$(git rev-parse --show-toplevel)
@@ -37,7 +37,7 @@ config_targets=(
   "vendor/xiaomi/$device.config"
 )
 local_suffix=o
-if [[ "$variant" == kernelsu || "$variant" == bbg ]]; then
+if [[ "$variant" == kernelsu ]]; then
   expected_kernelsu_commit=$(json_value upstreams kernelsu_non_gki commit)
   actual_kernelsu_commit=$(git -C "$root/drivers/kernelsu" rev-parse HEAD 2>/dev/null || true)
   if [[ "$actual_kernelsu_commit" != "$expected_kernelsu_commit" ]]; then
@@ -46,16 +46,6 @@ if [[ "$variant" == kernelsu || "$variant" == bbg ]]; then
   fi
   config_targets+=(vendor/dragonkernel-kernelsu.config)
   local_suffix=ksu
-  if [[ "$variant" == bbg ]]; then
-    expected_bbg_commit=$(json_value upstreams baseband_guard commit)
-    actual_bbg_commit=$(git -C "$root/drivers/baseband-guard" rev-parse HEAD 2>/dev/null || true)
-    if [[ "$actual_bbg_commit" != "$expected_bbg_commit" ]]; then
-      echo "Baseband Guard mismatch: expected $expected_bbg_commit, got ${actual_bbg_commit:-missing}" >&2
-      exit 1
-    fi
-    config_targets+=(vendor/dragonkernel-bbg.config)
-    local_suffix=ksu-bbg
-  fi
 elif [[ "$variant" == sukisu ]]; then
   expected_sukisu_commit=$(json_value upstreams sukisu_ultra commit)
   actual_sukisu_commit=$(git -C "$root/drivers/sukisu" rev-parse HEAD 2>/dev/null || true)
@@ -65,6 +55,18 @@ elif [[ "$variant" == sukisu ]]; then
   fi
   config_targets+=(vendor/dragonkernel-sukisu.config)
   local_suffix=suki
+fi
+
+expected_bbg_commit=$(json_value upstreams baseband_guard commit)
+actual_bbg_commit=$(git -C "$root/drivers/baseband-guard" rev-parse HEAD 2>/dev/null || true)
+if [[ "$actual_bbg_commit" != "$expected_bbg_commit" ]]; then
+  echo "Baseband Guard mismatch: expected $expected_bbg_commit, got ${actual_bbg_commit:-missing}" >&2
+  exit 1
+fi
+if ! git -C "$root/drivers/baseband-guard" apply --reverse --check \
+  "$root/patches/bbg/a54e0dc6-hardening.patch"; then
+  echo "Baseband Guard hardening patch is not applied" >&2
+  exit 1
 fi
 
 mkdir -p "$out"
@@ -127,9 +129,14 @@ for option in \
   CONFIG_THERMAL_TSENS=y \
   CONFIG_QTI_BCL_PMIC5=y \
   CONFIG_QTI_BCL_SOC_DRIVER=y \
-  CONFIG_QTI_THERMAL_LIMITS_DCVS=y; do
+  CONFIG_QTI_THERMAL_LIMITS_DCVS=y \
+  CONFIG_BBG=y \
+  CONFIG_BBG_BLOCK_BOOT=y \
+  '# CONFIG_BBG_BLOCK_RECOVERY is not set'; do
   grep -qx "$option" "$out/.config"
 done
+grep -q '^CONFIG_LSM=.*baseband_guard' "$out/.config"
+grep -q ' bbg_init$' "$out/System.map"
 
 case "$device" in
   umi|thyme)
@@ -152,7 +159,7 @@ for option in "${device_options[@]}"; do
   grep -qx "$option" "$out/.config"
 done
 
-if [[ "$variant" == kernelsu || "$variant" == bbg ]]; then
+if [[ "$variant" == kernelsu ]]; then
   grep -qx 'CONFIG_DRAGONKERNEL_KERNELSU=y' "$out/.config"
   grep -qx 'CONFIG_KSU=y' "$out/.config"
   grep -qx 'CONFIG_KPROBES=y' "$out/.config"
@@ -162,13 +169,6 @@ if [[ "$variant" == kernelsu || "$variant" == bbg ]]; then
   grep -qx '# CONFIG_KSU_SUSFS_ENABLE_LOG is not set' "$out/.config"
   grep -q ' ksu_kernelsu_init$' "$out/System.map"
   grep -q ' susfs_init$' "$out/System.map"
-  if [[ "$variant" == bbg ]]; then
-    grep -qx 'CONFIG_BBG=y' "$out/.config"
-    grep -qx 'CONFIG_BBG_BLOCK_BOOT=y' "$out/.config"
-    grep -qx '# CONFIG_BBG_BLOCK_RECOVERY is not set' "$out/.config"
-    grep -q '^CONFIG_LSM=.*baseband_guard' "$out/.config"
-    grep -q ' bbg_init$' "$out/System.map"
-  fi
 elif [[ "$variant" == sukisu ]]; then
   grep -qx 'CONFIG_DRAGONKERNEL_SUKISU=y' "$out/.config"
   grep -qx 'CONFIG_KSU=y' "$out/.config"

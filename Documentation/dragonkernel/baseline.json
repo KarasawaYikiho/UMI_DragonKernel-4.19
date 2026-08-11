@@ -155,7 +155,11 @@
     }
   },
   "common_security": {
-    "bbg": "required-after-validation",
+    "bbg": {
+      "role": "common-anti-format-feature",
+      "root_dependency": false,
+      "separate_validation": true
+    },
     "root_hiding": {
       "required_variants": [
         "magisk",

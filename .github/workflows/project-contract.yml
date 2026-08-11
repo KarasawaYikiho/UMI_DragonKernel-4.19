@@ -18,7 +18,6 @@ jobs:
         scripts/dragonkernel/build_original.sh
         scripts/dragonkernel/build_kernelsu.sh
         scripts/dragonkernel/build_sukisu.sh
-        scripts/dragonkernel/build_bbg.sh
         scripts/dragonkernel/prepare_toolchain.sh
         scripts/dragonkernel/prepare_susfs.sh
         scripts/dragonkernel/prepare_sukisu.sh

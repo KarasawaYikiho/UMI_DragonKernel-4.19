@@ -22,6 +22,7 @@ on:
       - "virt/**"
       - "patches/sukisu/**"
       - "patches/susfs/kernel-4.19.patch"
+      - "patches/bbg/**"
       - "scripts/dragonkernel/**"
       - "Documentation/dragonkernel/baseline.json"
       - "Kconfig"
@@ -58,6 +59,9 @@ jobs:
 
       - name: Apply locked SukiSU and SUSFS patches
         run: scripts/dragonkernel/prepare_sukisu.sh
+
+      - name: Apply locked BBG hardening patch
+        run: scripts/dragonkernel/prepare_bbg.sh
 
       - name: Build SukiSU kernel
         run: scripts/dragonkernel/build_sukisu.sh "${{ matrix.device }}"

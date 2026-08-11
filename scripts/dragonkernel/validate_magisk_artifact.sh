@@ -62,6 +62,7 @@ case "$1" in
 esac
 grep -qx "$symbol=y" "$config"
 grep -qx 'CONFIG_DRAGONKERNEL_ROOT_NONE=y' "$config"
+grep -qx 'CONFIG_BBG=y' "$config"
 ! grep -Eq '^CONFIG_(KSU|KPM|KSU_SUSFS)=y$' "$config"
 test "$(od -An -j56 -N4 -tx1 "$image" | tr -d ' \n')" = 41524d64
 

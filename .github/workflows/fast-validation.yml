@@ -12,7 +12,7 @@ on:
         description: Kernel variant
         required: true
         type: choice
-        options: [original, kernelsu, sukisu, bbg]
+        options: [original, kernelsu, sukisu]
 
 permissions:
   contents: read
@@ -52,14 +52,14 @@ jobs:
         if: inputs.variant != 'original'
         shell: bash
         run: |
-          if [[ "${{ inputs.variant }}" == kernelsu || "${{ inputs.variant }}" == bbg ]]; then
+          if [[ "${{ inputs.variant }}" == kernelsu ]]; then
             scripts/dragonkernel/prepare_susfs.sh
           else
             scripts/dragonkernel/prepare_sukisu.sh
           fi
-          if [[ "${{ inputs.variant }}" == bbg ]]; then
-            scripts/dragonkernel/prepare_bbg.sh
-          fi
+
+      - name: Apply locked BBG hardening patch
+        run: scripts/dragonkernel/prepare_bbg.sh
 
       - name: Build selected kernel
         run: scripts/dragonkernel/build_kernel.sh "${{ inputs.variant }}" "${{ inputs.device }}"

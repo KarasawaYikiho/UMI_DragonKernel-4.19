@@ -1,16 +1,16 @@
 # 构建证据
 
-验证源码：`46575b0b43f63d62c83ff7ceb48de15cb6b6eab3`。本轮未执行本地内核编译。
+最近有效父提交：`dde65a6886793fe6e2758f7756d484373cef7755`。本轮未执行本地内核编译。
 
 ## GitHub Actions
 
 | 工作流 | Run | 结果 |
 |---|---:|---|
-| Project contract | `31468231063` | 通过 |
-| Original 五机型 | `31468231097` | 5/5 |
-| KernelSU 五机型 | `31468231024` | 5/5 |
-| SukiSU 五机型 | `31468231011` | 5/5 |
-| BBG 五机型 | `31468230988` | 5/5 |
+| Project contract | `31473698739` | 通过 |
+| Original 五机型 | `31473698766` | 5/5 |
+| KernelSU 五机型 | `31473698758` | 5/5 |
+| SukiSU 五机型 | `31473698737` | 5/5 |
+| 旧 BBG 组合 | `31473698735` | 作废：错误依赖 KernelSU/SUSFS，不计入 BBG 证据 |
 | Fast Original/cmi | `31468350136` | 通过 |
 | Fast Original/umi | `31469006252` | 通过 |
 | Fast Original/umi，同 SHA 重复 | `31470315829` | 通过 |
@@ -26,7 +26,7 @@
 - Original/umi 两次同 SHA 构建完全一致：Image `b4e24162b499aef5973025cde364d6eb173f38c90fd01b3967f20a4ea6236ca0`；候选 ZIP `5d4648bee33fa3a8d3fbc9cff4b2a2acf413dc90375bcdc5af831e0a444c8e71`。
 - 下载临时目录已删除；仅保留被 Git 忽略的本地私有结构验证输出。
 
-待当前文档与 OTA payload 路径提交后，最终 SHA 必须重新通过 Project contract、四个五机型矩阵、五机型快速 Original、同 SHA 复现及全部 ROM 档案结构门禁。
+公共 Baseband-guard 修正后的最终 SHA 必须重新通过 Project contract、Original/KernelSU/SukiSU 三个变体矩阵、独立 BBG 功能矩阵、五机型快速 Original、同 SHA 复现及全部 ROM 结构门禁。
 
 ## 尚未证明
 

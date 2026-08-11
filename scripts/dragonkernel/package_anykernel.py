@@ -15,13 +15,11 @@ VARIANT_CONFIG = {
     "original": "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
     "kernelsu": "CONFIG_DRAGONKERNEL_KERNELSU=y",
     "sukisu": "CONFIG_DRAGONKERNEL_SUKISU=y",
-    "bbg": "CONFIG_BBG=y",
 }
 VARIANT_LABEL = {
     "original": "Original",
     "kernelsu": "KernelSU",
     "sukisu": "SukiSU_KPM_SUSFS",
-    "bbg": "BBG_Validation",
 }
 DEVICE_CONFIG = {
     device: f"CONFIG_MACH_XIAOMI_{device.upper()}=y" for device in DEVICES
@@ -128,7 +126,7 @@ def validate_inputs(template: Path, artifact: Path, device: str, variant: str) -
     if not config_path.is_file():
         fail("artifact config is missing")
     config = set(config_path.read_text(encoding="utf-8").splitlines())
-    for token in (DEVICE_CONFIG[device], VARIANT_CONFIG[variant]):
+    for token in (DEVICE_CONFIG[device], VARIANT_CONFIG[variant], "CONFIG_BBG=y"):
         if token not in config:
             fail(f"artifact config missing {token}")
     with image.open("rb") as image_file:
