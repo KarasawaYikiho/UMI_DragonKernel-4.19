@@ -1,6 +1,6 @@
 id=dragon_dac
 name=Dragon Adaptive Controller
-version=0.7.1
-versionCode=8
+version=0.7.2
+versionCode=9
 author=DragonKernel
 description=Joyose remote isolation and optional event-driven policy controller

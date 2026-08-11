@@ -9,6 +9,7 @@ sdk=${API:-$(getprop ro.build.version.sdk)}
 
 install_root=/data/adb/dragon-dac
 mkdir -p "$install_root/config"
+chmod 0700 "$install_root" "$install_root/config"
 if [ ! -f "$install_root/config/dac.conf" ]; then
   cp "$MODPATH/config/dac.conf" "$install_root/config/dac.conf"
 fi

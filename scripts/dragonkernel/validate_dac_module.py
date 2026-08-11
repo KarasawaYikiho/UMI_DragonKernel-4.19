@@ -38,7 +38,7 @@ def validate(module_zip: Path, checksum: Path) -> None:
         if b"libc++_shared.so" in binary:
             fail("daemon has an unbundled libc++ dependency")
         properties = archive.read("module.prop").decode("utf-8").splitlines()
-        if not {"id=dragon_dac", "version=0.7.1", "versionCode=8"} <= set(properties):
+        if not {"id=dragon_dac", "version=0.7.2", "versionCode=9"} <= set(properties):
             fail("module identity changed")
         config = set(archive.read("config/dac.conf").decode("utf-8").splitlines())
         for token in (
@@ -53,6 +53,9 @@ def validate(module_zip: Path, checksum: Path) -> None:
             script = archive.read(name)
             if not script.startswith(b"#!/system/bin/sh\n") or b"\r\n" in script:
                 fail(f"invalid Android shell script: {name}")
+        uninstall = archive.read("uninstall.sh")
+        if b'readlink "/proc/$pid/exe"' not in uninstall or b"kill -TERM" not in uninstall:
+            fail("uninstall process ownership guard changed")
 
 
 def self_test() -> None:

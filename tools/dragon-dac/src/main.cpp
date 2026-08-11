@@ -2,6 +2,7 @@
 #include <linux/bpf.h>
 #include <linux/filter.h>
 #include <sys/epoll.h>
+#include <sys/file.h>
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
@@ -403,7 +404,8 @@ std::map<std::string, bool> probe_backends() {
 
 bool atomic_write(const std::string& path, const std::string& data) {
   const std::string temporary = path + ".tmp";
-  const int file = open(temporary.c_str(), O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC, 0600);
+  const int file = open(temporary.c_str(), O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC |
+                                           O_NOFOLLOW, 0600);
   if (file < 0) return false;
   const ssize_t written = write(file, data.data(), data.size());
   const bool ok = written == static_cast<ssize_t>(data.size()) && fsync(file) == 0;
@@ -542,6 +544,13 @@ int run_self_test() {
 
 int run_daemon(const std::string& config_path, const std::string& state_path,
                bool force_dry_run) {
+  const std::string lock_path = parent_path(state_path) + "/daemon.lock";
+  const int lock_fd = open(lock_path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0600);
+  if (lock_fd < 0 || flock(lock_fd, LOCK_EX | LOCK_NB) != 0) {
+    if (lock_fd >= 0) close(lock_fd);
+    std::cerr << "another daemon owns the state directory\n";
+    return 1;
+  }
   Config config;
   std::string error;
   bool valid = load_config(config_path, &config, &error);
@@ -552,7 +561,10 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   sigaddset(&signal_mask, SIGINT);
   sigaddset(&signal_mask, SIGTERM);
   sigaddset(&signal_mask, SIGHUP);
-  if (sigprocmask(SIG_BLOCK, &signal_mask, nullptr) != 0) return 1;
+  if (sigprocmask(SIG_BLOCK, &signal_mask, nullptr) != 0) {
+    close(lock_fd);
+    return 1;
+  }
   const auto backends = probe_backends();
   CloudIsolator cloud;
   std::string cloud_status = valid ? "pending" : "safe";
@@ -590,6 +602,7 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   };
   if (!publish()) {
     std::cerr << "cannot write state: " << std::strerror(errno) << '\n';
+    close(lock_fd);
     return 1;
   }
 
@@ -598,14 +611,14 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   const int inotify_fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
   const int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
   if (signal_fd < 0 || timer_fd < 0 || inotify_fd < 0 || epoll_fd < 0) {
-    close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+    close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd, lock_fd});
     return 1;
   }
   const int watch = inotify_add_watch(
       inotify_fd, parent_path(config_path).c_str(),
       IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE | IN_DELETE);
   if (!arm_timer(timer_fd, config.telemetry_interval_s) || watch < 0) {
-    close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+    close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd, lock_fd});
     return 1;
   }
   for (const int descriptor : {signal_fd, timer_fd, inotify_fd}) {
@@ -613,7 +626,7 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
     event.events = EPOLLIN;
     event.data.fd = descriptor;
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, descriptor, &event) != 0) {
-      close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+      close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd, lock_fd});
       return 1;
     }
   }
@@ -673,7 +686,7 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   cloud_status = "stopped";
   scene = "STOPPED";
   publish();
-  close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd});
+  close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd, lock_fd});
   return 0;
 }
 
