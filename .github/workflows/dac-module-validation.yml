@@ -68,7 +68,7 @@ jobs:
           python3 scripts/dragonkernel/package_dac_module.py \
             --binary out/dragon-dac --output-dir out/b --timestamp "$timestamp"
           cmp out/a/*.zip out/b/*.zip
-          sha256sum -c out/a/*.sha256
+          (cd out/a && sha256sum -c *.sha256)
           cp out/a/*.zip out/a/*.sha256 out/
       - uses: actions/upload-artifact@v6
         with:
