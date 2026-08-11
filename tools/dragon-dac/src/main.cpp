@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "policy.h"
+
 namespace {
 
 constexpr int kMaxEvents = 4;
@@ -34,6 +36,7 @@ struct Config {
   bool freezer = false;
   bool game = false;
   bool ddr = false;
+  bool cpu = false;
   bool dry_run = true;
   int telemetry_interval_s = 5;
   std::string mode = "auto";
@@ -86,6 +89,7 @@ bool load_config(const std::string& path, Config* config, std::string* error) {
     const std::string value = trim(line.substr(delimiter + 1));
     bool* boolean = nullptr;
     if (key == "dac.enabled") boolean = &candidate.enabled;
+    else if (key == "dac.cpu.enabled") boolean = &candidate.cpu;
     else if (key == "dac.freezer.enabled") boolean = &candidate.freezer;
     else if (key == "dac.game.enabled") boolean = &candidate.game;
     else if (key == "dac.ddr.enabled") boolean = &candidate.ddr;
@@ -424,6 +428,15 @@ int run_self_test() {
   if (unified_cgroup_path("2:cpu:/x\n0::/uid_1000/pid_12\n") !=
       "/uid_1000/pid_12") return 1;
   if (!unified_cgroup_path("0::/../unsafe\n").empty()) return 1;
+  dragon::BoostArbiter arbiter;
+  if (!arbiter.acquire(dragon::BoostOwner::kTouch, 128, 20) ||
+      !arbiter.acquire(dragon::BoostOwner::kAppLaunch, 256, 30) ||
+      arbiter.effective(10) != 256) return 1;
+  arbiter.release(dragon::BoostOwner::kAppLaunch);
+  if (arbiter.effective(10) != 128) return 1;
+  arbiter.set_thermal_cap(64);
+  if (arbiter.effective(10) != 64 || arbiter.effective(20) != 0 ||
+      arbiter.active() != 0 || arbiter.acquire(dragon::BoostOwner::kTouch, 1025, 1)) return 1;
   return 0;
 }
 

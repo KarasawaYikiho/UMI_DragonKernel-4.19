@@ -223,6 +223,7 @@ for path in (
     "scripts/dragonkernel/package_dac_module.py",
     "scripts/dragonkernel/validate_dac_module.py",
     "tools/dragon-dac/src/main.cpp",
+    "tools/dragon-dac/src/policy.h",
     "tools/dragon-dac/module/module.prop",
     "tools/dragon-dac/module/config/dac.conf",
     "tools/dragon-dac/module/customize.sh",
@@ -249,11 +250,21 @@ for token in (
     "BPF_CGROUP_INET_EGRESS",
     "BPF_LINK_CREATE",
     "cgroup_is_joyose_only",
+    "BoostArbiter",
 ):
     if token not in dac_source:
         fail("Joyose cgroup BPF isolation contract changed")
+kona_config = indexed_text("arch/arm64/configs/vendor/kona-perf_defconfig")
+for token in ("CONFIG_CGROUP_BPF=y", "CONFIG_BPF_SYSCALL=y"):
+    if token not in kona_config:
+        fail("Joyose cgroup BPF kernel capability changed")
 module_config = indexed_text("tools/dragon-dac/module/config/dac.conf")
-for token in ("dac.enabled=false", "dac.dry_run=true", "dac.cloud_control.remote=block"):
+for token in (
+    "dac.enabled=false",
+    "dac.cpu.enabled=false",
+    "dac.dry_run=true",
+    "dac.cloud_control.remote=block",
+):
     if token not in module_config:
         fail("DAC safe default contract changed")
 

@@ -49,3 +49,25 @@ The Hyper3 static audit confirms Joyose is not thermal-only: it has boot and net
 Further component analysis found two process domains and mixed remote/local responsibilities in the default process. Component disabling is therefore also rejected. The implemented boundary attaches ingress/egress drop programs only to existing cgroup v2 leaves whose process inventory is exclusively Joyose; it never moves tasks or changes CPU controller membership. FD-scoped BPF links auto-detach on normal exit or process death. Missing, shared or unsupported cgroups fail SAFE, while Lineage without Joyose is a no-op.
 
 `825cc986c121` passed Project contract and DAC module validation, including host and Android arm64 compilation, deterministic packaging and the independent module-content gate. This is source/artifact evidence only; cgroup exclusivity, blocked traffic and retained local behavior remain post-optimization device gates.
+
+## CPU ownership core
+
+### Problem
+
+Vendor input boost, Joyose, Power HAL and later DAC scenes can overlap; releasing one request must not clear another owner's boost.
+
+### Current implementation and evidence
+
+The kernel retains WALT, SchedTune, uclamp, schedutil, scheduler boost, CPU boost and core_ctl. Static Hyper3 policy files confirm multiple existing cgroup/task-profile owners, so DAC cannot safely overwrite those groups before runtime ownership evidence.
+
+### Proposed change and benefit
+
+Add a no-write `BoostArbiter` with per-owner deadlines, maximum effective uclamp floor and a higher-priority thermal cap. Keep the CPU backend disabled while the arbiter and parser contracts are built.
+
+### Risk, compatibility and rollback
+
+The arbiter currently owns no kernel resource and contains no CPU masks, frequencies or package policy. Removing the optional module removes the userspace policy layer; all five devices retain vendor behavior.
+
+### Test plan
+
+Exercise overlapping acquire/release, expiry, thermal cap and invalid bounds in the native self-test, then require host and Android arm64 Actions plus module-content validation.

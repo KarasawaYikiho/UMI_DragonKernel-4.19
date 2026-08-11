@@ -18,3 +18,7 @@
 5. 任何改动跑桌面、超级岛、启动、切换、下载、视频、相机、游戏和 screen-off 回归。
 
 禁止新增 governor、固定长全核 boost、全前台绑 prime、按应用名修改 scheduler 或修改 OPP/电压。
+
+## 当前实现
+
+`BoostArbiter` 已建立按 owner 的有期 uclamp 请求模型：相同 owner 续期，不同 owner 取最大有效 floor，thermal cap 始终优先，释放只影响自身请求。CPU backend 默认关闭，当前不写 cgroup、uclamp、cpuset、core_ctl 或 boost 节点。
