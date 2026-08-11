@@ -145,3 +145,5 @@ The module daemon takes a nonblocking lock scoped to its state directory, state 
 Joyose cgroup directories reject final-component symlinks. Membership exclusivity is checked before and immediately after BPF link creation, then on every low-frequency reconcile; any change detaches all owned links and enters SAFE. Concurrent migration remains an explicit device stress gate.
 
 The disabled uclamp backend now attempts rollback on destruction. A transient read/write failure retains only records that may still be DAC-owned for retry; dead threads are complete, while externally changed clamps are never overwritten.
+
+`1ad101088173` passed Project contract and DAC module validation for module `0.7.4`; the pinned Actions compiled host and Android arm64 binaries, validated deterministic packaging and produced the independently checked module artifact.
