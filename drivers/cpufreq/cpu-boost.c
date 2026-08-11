@@ -59,7 +59,7 @@ show_one(sched_boost_on_input);
 store_one(sched_boost_on_input);
 cpu_boost_attr_rw(sched_boost_on_input);
 
-static bool sched_boost_active;
+static int sched_boost_active;
 
 static struct delayed_work input_boost_rem;
 static u64 last_input_time;
@@ -184,9 +184,25 @@ static void update_policy_online(void)
 	put_online_cpus();
 }
 
+static void disable_input_sched_boost(void)
+{
+	int ret;
+
+	if (!sched_boost_active)
+		return;
+
+	ret = sched_set_boost(-sched_boost_active);
+	if (ret) {
+		pr_err("cpu-boost: sched boost disable failed\n");
+		return;
+	}
+
+	sched_boost_active = 0;
+}
+
 static void do_input_boost_rem(struct work_struct *work)
 {
-	unsigned int i, ret;
+	unsigned int i;
 	struct cpu_sync *i_sync_info;
 
 	/* Reset the input_boost_min for all CPUs in the system */
@@ -199,24 +215,17 @@ static void do_input_boost_rem(struct work_struct *work)
 	/* Update policies for all online CPUs */
 	update_policy_online();
 
-	if (sched_boost_active) {
-		ret = sched_set_boost(0);
-		if (ret)
-			pr_err("cpu-boost: sched boost disable failed\n");
-		sched_boost_active = false;
-	}
+	disable_input_sched_boost();
 }
 
 static void do_input_boost(struct work_struct *work)
 {
-	unsigned int i, ret;
+	unsigned int boost, i;
+	int ret;
 	struct cpu_sync *i_sync_info;
 
 	cancel_delayed_work_sync(&input_boost_rem);
-	if (sched_boost_active) {
-		sched_set_boost(0);
-		sched_boost_active = false;
-	}
+	disable_input_sched_boost();
 
 	/* Set the input_boost_min for all CPUs in the system */
 	pr_debug("Setting input boost min for all CPUs\n");
@@ -229,12 +238,13 @@ static void do_input_boost(struct work_struct *work)
 	update_policy_online();
 
 	/* Enable scheduler boost to migrate tasks to big cluster */
-	if (sched_boost_on_input > 0) {
-		ret = sched_set_boost(sched_boost_on_input);
+	boost = READ_ONCE(sched_boost_on_input);
+	if (boost > 0) {
+		ret = sched_set_boost(boost);
 		if (ret)
 			pr_err("cpu-boost: sched boost enable failed\n");
 		else
-			sched_boost_active = true;
+			sched_boost_active = boost;
 	}
 
 	queue_delayed_work(cpu_boost_wq, &input_boost_rem,
@@ -348,12 +358,18 @@ static int cpu_boost_init(void)
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
 	}
-	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
+	ret = cpufreq_register_notifier(&boost_adjust_nb,
+					CPUFREQ_POLICY_NOTIFIER);
+	if (ret)
+		goto err_destroy_workqueue;
 
 	cpu_boost_kobj = kobject_create_and_add("cpu_boost",
 						&cpu_subsys.dev_root->kobj);
-	if (!cpu_boost_kobj)
+	if (!cpu_boost_kobj) {
 		pr_err("Failed to initialize sysfs node for cpu_boost.\n");
+		ret = -ENOMEM;
+		goto err_unregister_notifier;
+	}
 
 	ret = sysfs_create_file(cpu_boost_kobj, &input_boost_ms_attr.attr);
 	if (ret)
@@ -369,6 +385,19 @@ static int cpu_boost_init(void)
 		pr_err("Failed to create sched_boost_on_input node: %d\n", ret);
 
 	ret = input_register_handler(&cpuboost_input_handler);
+	if (ret)
+		goto err_put_kobject;
+
 	return 0;
+
+err_put_kobject:
+	kobject_put(cpu_boost_kobj);
+	cpu_boost_kobj = NULL;
+err_unregister_notifier:
+	cpufreq_unregister_notifier(&boost_adjust_nb,
+				    CPUFREQ_POLICY_NOTIFIER);
+err_destroy_workqueue:
+	destroy_workqueue(cpu_boost_wq);
+	return ret;
 }
 late_initcall(cpu_boost_init);

@@ -272,11 +272,24 @@ for token in ("CONFIG_UCLAMP_TASK=y", "CONFIG_UCLAMP_TASK_GROUP=y"):
         fail("utilization clamping config contract changed")
 schedutil = indexed_text("kernel/sched/cpufreq_schedutil.c")
 for token in (
+    "util = cpu_util_freq(sg_cpu->cpu, &sg_cpu->walt_load);",
     "util = uclamp_rq_util_with(rq, util, p);",
     "return uclamp_rq_util_with(rq, util, NULL);",
 ):
     if token not in schedutil:
         fail("WALT/schedutil utilization clamping contract changed")
+cpu_boost = indexed_text("drivers/cpufreq/cpu-boost.c")
+for token in (
+    "sched_set_boost(-sched_boost_active)",
+    "sched_boost_active = boost;",
+):
+    if token not in cpu_boost:
+        fail("input scheduler boost ownership contract changed")
+if "sched_set_boost(0)" in cpu_boost:
+    fail("input boost must not clear unrelated scheduler boost owners")
+sched_boost = indexed_text("kernel/sched/boost.c")
+if "sched_boosts[sched_effective_boost()].exit();" not in sched_boost:
+    fail("scheduler boost reset must exit only the effective boost")
 if 'obj-$(CONFIG_BBG)' not in indexed_text("drivers/Makefile"):
     fail("BBG build integration missing")
 if 'source "drivers/baseband-guard/Kconfig"' not in indexed_text("drivers/Kconfig"):
@@ -356,6 +369,14 @@ for path in battery_sources:
     if "design_cap_orig" in source or "batt_dc_orig" in source:
         fail(f"manual battery design capacity override remains in {path}")
 
+cmi_fg_source = (ROOT / battery_sources[1]).read_text(encoding="utf-8")
+if not re.search(
+    r"case POWER_SUPPLY_PROP_CHARGE_FULL:\s+"
+    r"if \(bq->old_hw\) \{\s+val->intval = bq->batt_dc;",
+    cmi_fg_source,
+):
+    fail("cmi fuel-gauge fallback must use its model design capacity")
+
 fg_gen4_source = (ROOT / battery_sources[0]).read_text(encoding="utf-8")
 if "pval->intval > chip->cl->nom_cap_uah" not in fg_gen4_source:
     fail("FG Gen4 manual learned-capacity writes must remain stock-bounded")
@@ -385,6 +406,39 @@ build_source = (ROOT / "scripts/dragonkernel/build_kernel.sh").read_text(
 )
 if "SOURCE_DATE_EPOCH=$(git -C \"$root\" show -s --format=%ct HEAD)" not in build_source:
     fail("kernel builds must use the commit epoch")
+for token in (
+    "CONFIG_SCHED_WALT=y",
+    "CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y",
+    "CONFIG_UCLAMP_TASK=y",
+    "CONFIG_UCLAMP_TASK_GROUP=y",
+    "CONFIG_PSI=y",
+    "CONFIG_ZRAM=y",
+    "CONFIG_IOSCHED_BFQ=y",
+    "CONFIG_BFQ_GROUP_IOSCHED=y",
+    "CONFIG_F2FS_FS=y",
+    "CONFIG_BLK_WBT=y",
+    "CONFIG_BLK_WBT_SQ=y",
+    "CONFIG_THERMAL=y",
+    "CONFIG_CPU_THERMAL=y",
+    "CONFIG_THERMAL_TSENS=y",
+    "CONFIG_QTI_BCL_PMIC5=y",
+    "CONFIG_QTI_BCL_SOC_DRIVER=y",
+    "CONFIG_QTI_THERMAL_LIMITS_DCVS=y",
+):
+    if token not in build_source:
+        fail("kernel build configuration gate changed")
+for token in (
+    "CONFIG_LN8282=y",
+    "CONFIG_BQ2597X_CHARGE_PUMP=y",
+    "CONFIG_BQ_PUMP_WIRELESS_CHARGE=y",
+    "CONFIG_FUEL_GAUGE_BQ27Z561=y",
+    "CONFIG_QPNP_SMB5_CAS=y",
+    "CONFIG_SMB1398_CHARGER_CAS=y",
+    "CONFIG_FUEL_GAUGE_BQ28Z610=y",
+    "CONFIG_CHARGER_BQ25790=y",
+):
+    if token not in build_source:
+        fail("device charging configuration gate changed")
 
 kheaders_source = (ROOT / "kernel/gen_kheaders.sh").read_text(encoding="utf-8")
 for token in (

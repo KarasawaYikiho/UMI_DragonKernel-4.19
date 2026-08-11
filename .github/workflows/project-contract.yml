@@ -48,6 +48,7 @@ jobs:
             drivers/power/supply/qcom/fg-core.h
             drivers/power/supply/qcom/qpnp-fg-gen4.c
             drivers/power/supply/qcom_cas/bq27z561_fg.c
+            drivers/cpufreq/cpu-boost.c
             drivers/baseband-guard
             drivers/Makefile
             drivers/Kconfig
@@ -55,6 +56,8 @@ jobs:
             drivers/thermal/thermal_core.c
             include/linux/cpu_cooling.h
             kernel/gen_kheaders.sh
+            kernel/sched/boost.c
+            kernel/sched/cpufreq_schedutil.c
           sparse-checkout-cone-mode: false
       - run: python3 scripts/dragonkernel/verify_baseline.py
       - run: python3 scripts/dragonkernel/release_name.py --self-test

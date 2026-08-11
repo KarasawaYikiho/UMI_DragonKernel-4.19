@@ -110,8 +110,47 @@ mapfile -d '' modules < <(find "$out" -type f -name '*.ko' -print0 | sort -z)
 ((${#dtbs[@]} > 0))
 ((${#dtbos[@]} > 0))
 ((${#modules[@]} > 0))
-grep -qx 'CONFIG_UCLAMP_TASK=y' "$out/.config"
-grep -qx 'CONFIG_UCLAMP_TASK_GROUP=y' "$out/.config"
+for option in \
+  CONFIG_SCHED_WALT=y \
+  CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y \
+  CONFIG_UCLAMP_TASK=y \
+  CONFIG_UCLAMP_TASK_GROUP=y \
+  CONFIG_PSI=y \
+  CONFIG_ZRAM=y \
+  CONFIG_IOSCHED_BFQ=y \
+  CONFIG_BFQ_GROUP_IOSCHED=y \
+  CONFIG_F2FS_FS=y \
+  CONFIG_BLK_WBT=y \
+  CONFIG_BLK_WBT_SQ=y \
+  CONFIG_THERMAL=y \
+  CONFIG_CPU_THERMAL=y \
+  CONFIG_THERMAL_TSENS=y \
+  CONFIG_QTI_BCL_PMIC5=y \
+  CONFIG_QTI_BCL_SOC_DRIVER=y \
+  CONFIG_QTI_THERMAL_LIMITS_DCVS=y; do
+  grep -qx "$option" "$out/.config"
+done
+
+case "$device" in
+  umi|thyme)
+    device_options=(CONFIG_LN8282=y CONFIG_BQ2597X_CHARGE_PUMP=y
+      CONFIG_BQ_PUMP_WIRELESS_CHARGE=y)
+    ;;
+  cmi)
+    device_options=(CONFIG_LN8282=y CONFIG_FUEL_GAUGE_BQ27Z561=y
+      CONFIG_BQ2597X_CHARGE_PUMP=y CONFIG_BQ_PUMP_WIRELESS_CHARGE=y)
+    ;;
+  cas)
+    device_options=(CONFIG_QPNP_SMB5_CAS=y CONFIG_SMB1398_CHARGER_CAS=y
+      CONFIG_FUEL_GAUGE_BQ28Z610=y CONFIG_CHARGER_BQ25790=y)
+    ;;
+  apollo)
+    device_options=(CONFIG_BQ2597X_CHARGE_PUMP=y)
+    ;;
+esac
+for option in "${device_options[@]}"; do
+  grep -qx "$option" "$out/.config"
+done
 
 if [[ "$variant" == kernelsu || "$variant" == bbg ]]; then
   grep -qx 'CONFIG_DRAGONKERNEL_KERNELSU=y' "$out/.config"

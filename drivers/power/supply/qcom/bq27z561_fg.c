@@ -1558,7 +1558,7 @@ static int fg_get_property(struct power_supply *psy, enum power_supply_property 
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
 		if (bq->old_hw) {
-			val->intval = 4050000;
+			val->intval = bq->batt_dc;
 			break;
 		}
 		val->intval = bq->batt_fcc * 1000;
