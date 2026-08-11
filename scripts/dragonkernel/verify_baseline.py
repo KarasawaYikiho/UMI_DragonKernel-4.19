@@ -267,6 +267,16 @@ for token in (
 common_config = indexed_text("arch/arm64/configs/vendor/xiaomi/sm8250-common.config")
 if "# CONFIG_BBG is not set" not in common_config:
     fail("BBG must remain disabled outside its explicit validation overlay")
+for token in ("CONFIG_UCLAMP_TASK=y", "CONFIG_UCLAMP_TASK_GROUP=y"):
+    if token not in common_config:
+        fail("utilization clamping config contract changed")
+schedutil = indexed_text("kernel/sched/cpufreq_schedutil.c")
+for token in (
+    "util = uclamp_rq_util_with(rq, util, p);",
+    "return uclamp_rq_util_with(rq, util, NULL);",
+):
+    if token not in schedutil:
+        fail("WALT/schedutil utilization clamping contract changed")
 if 'obj-$(CONFIG_BBG)' not in indexed_text("drivers/Makefile"):
     fail("BBG build integration missing")
 if 'source "drivers/baseband-guard/Kconfig"' not in indexed_text("drivers/Kconfig"):
