@@ -1,0 +1,6 @@
+id=dragon_dac
+name=Dragon Adaptive Controller
+version=0.1.0
+versionCode=1
+author=DragonKernel
+description=Optional event-driven policy controller; safe dry-run defaults

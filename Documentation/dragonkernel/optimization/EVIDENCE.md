@@ -1,0 +1,39 @@
+# Optimization evidence
+
+## Phase 0 and DAC skeleton
+
+### Problem
+
+The kernel had mechanisms but no complete ownership map, Joyose cloud-control boundary, runtime capture contract, DAC userspace layer or synchronized module artifact.
+
+### Current implementation
+
+WALT/SchedTune/uclamp/schedutil/boost/core_ctl/KGSL/devfreq/freezer/QTI thermal are present. Only the Xiaomi `thermal_message` kernel mailbox had been removed.
+
+### Evidence
+
+Current-tree Kconfig, source creation points, DTS owners, build scripts and public CI contracts were inspected at `08f410eb5242`. Runtime values remain intentionally unknown.
+
+### Proposed change
+
+Add the Phase 0 audit, read-only adb capture, event-driven native DAC skeleton, safe module template, deterministic packager and a pinned CI-only Android toolchain.
+
+### Expected benefit
+
+Later CPU/freezer/game/thermal work can use one policy owner, fail safe, avoid guessed paths and ship userspace functions independently of kernel variants.
+
+### Risk
+
+The skeleton is not a performance policy. Joyose block mode is rejected until ROM evidence identifies safe interception points.
+
+### Compatibility
+
+Kernel variants remain Original, Magisk, KernelSU and SukiSU. BBG remains common. The module uses the shared Magisk-module format without a ROOT-manager API dependency.
+
+### Rollback
+
+Remove the optional module. Phase 1 owns no kernel resource and defaults to disabled dry-run.
+
+### Test plan
+
+Project contract, Python/module self-tests, YAML and shell syntax, CI host self-test, pinned NDK arm64 build, ELF dependency check, deterministic ZIP comparison, then post-optimization device validation.

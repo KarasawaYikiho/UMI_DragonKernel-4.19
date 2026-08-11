@@ -13,6 +13,7 @@
 
 - WALT、schedutil、UCLAMP、Binder 优先级、输入 boost 与全局 boost 的机制级调度修正
 - 删除 Xiaomi `thermal_message` 用户态云控邮箱；保留 thermal zone、TSENS、BCL、LMH、冷却设备和硬件保护
+- Joyose 调度等云控已纳入 DAC 所有权审计；未验证远程拦截点前只观察、不启用阻断
 - Baseband-guard 作为所有变体共享的防格机 LSM；它不是 Root 变体，并有独立功能矩阵
 - 电池解容只保留自动学习到的高于原厂容量；启动容量按机型确定，手动写入仍受原厂值限制，电压、电流、认证和温度保护不变
 - GitHub Actions 五机型矩阵、单设备快速构建、ccache、可复现 Image/AnyKernel3 候选包
@@ -20,7 +21,7 @@
 
 ## 当前证据
 
-源代码快照 `dde65a688679` 的 Project contract 及 Original、KernelSU、SukiSU 三个五机型矩阵通过，共 15/15。旧 BBG 组合矩阵因错误依赖 KernelSU/SUSFS 已作废；公共 BBG 路径须在后续最终提交重新验证。Original/umi 的既有同 SHA 复现和五机型 ROM 结构配对仍须随最终 Image 重跑。
+源代码快照 `08f410eb5242` 的 Project contract、Original、KernelSU、SukiSU 与独立 BBG 公共功能矩阵通过，共 20/20。旧 BBG 组合证据因错误依赖 KernelSU/SUSFS 已作废。Original/umi 的既有同 SHA 复现和五机型 ROM 结构配对仍须随最终 Image 重跑。
 
 这些结果只证明源码、构建产物和 ROM 结构门禁有效，不代表已启动、兼容、稳定或可发布。调度、温控、电池、ROM 结构和快速构建全部冻结后，才进入实机验证。
 
@@ -32,3 +33,4 @@
 - [构建证据](Documentation/dragonkernel/LOCAL_BUILD_VALIDATION.md)
 - [私有输入规则](Documentation/dragonkernel/PRIVATE_INPUTS.md)
 - [机器可读基线](Documentation/dragonkernel/baseline.json)
+- [优化审计与验证](Documentation/dragonkernel/optimization/00_REPO_AUDIT.md)

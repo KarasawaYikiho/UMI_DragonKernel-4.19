@@ -5,11 +5,12 @@
 1. 冻结调度：WALT、schedutil、UCLAMP、Binder、boost、迁移、RT 饥饿和温控降频交互。
 2. 冻结内存与 I/O：PSI、回收、zram、BFQ/WBT、F2FS、写回和前后台压力。
 3. 冻结温控与充电：删除 `thermal_message` 后，确认 thermal zone、TSENS、BCL、LMH、冷却设备和硬件保护完整；禁止抬高或绕过安全限制。
-4. 冻结电池解容：启动容量按机型；仅保留自动学习到的高容量；手动写入仍受原厂值限制；电气、认证和温度保护不变。
-5. 冻结 ROM 结构：`Hyper3` 覆盖 `umi`/`cmi`/`cas`；`Lineage_**Latest**` 覆盖 `thyme`/`apollo`；包与镜像目录必须解析为同一 boot。
-6. 冻结防格机：Baseband-guard 是所有 Original/Root 变体共享的 LSM 功能，不得成为变体或依赖 KernelSU/SUSFS；另跑五机型功能矩阵。
-7. 冻结构建：优先 GitHub Actions 和下载 Artifact；每次源码改动通过 Project contract、受影响快速任务、完整五机型矩阵、产物复核和同 SHA 复现。
-8. 清理非必要缓存，仅保留 `main`、干净工作树、必要文档和可复用构建缓存。
+4. 冻结用户态策略：审计 Joyose、Power HAL、task profile 与 `msm_performance` 的调度所有权；统一模块隔离远程云控、保留必要本地兼容并由 DAC 仲裁写入。
+5. 冻结电池解容：启动容量按机型；仅保留自动学习到的高容量；手动写入仍受原厂值限制；电气、认证和温度保护不变。
+6. 冻结 ROM 结构：`Hyper3` 覆盖 `umi`/`cmi`/`cas`；`Lineage_**Latest**` 覆盖 `thyme`/`apollo`；包与镜像目录必须解析为同一 boot。
+7. 冻结防格机：Baseband-guard 是所有 Original/Root 变体共享的 LSM 功能，不得成为变体或依赖 KernelSU/SUSFS；另跑五机型功能矩阵。
+8. 冻结构建：优先 GitHub Actions 和下载 Artifact；每次源码改动通过 Project contract、受影响快速任务、完整五机型矩阵、产物复核和同 SHA 复现。
+9. 清理非必要缓存，仅保留 `main`、干净工作树、必要文档和可复用构建缓存。
 
 Gate O 未全部通过时，禁止刷写、启动、跑分、电池学习或其他实机验证。
 
@@ -31,6 +32,7 @@ Gate O 未全部通过时，禁止刷写、启动、跑分、电池学习或其�
 - 时区：`Asia/Shanghai`
 - Tag：`UMI_<yyyyMMddHHmm>_<Variant>`
 - Asset：`UMI_<yyyyMMddHHmm>_<Variant>_Build.zip`
+- Module：`UMI_<yyyyMMddHHmm>_DAC_Module_Build.zip`，与镜像使用同一时间戳
 - Variant：`Original`、`Magisk`、`KernelSU`、`SukiSU_KPM_SUSFS`
 
 构建或结构验证通过不能替代实机证据。

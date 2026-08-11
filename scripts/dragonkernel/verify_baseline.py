@@ -179,6 +179,7 @@ expected_release_naming = {
     "timestamp_format": "yyyyMMddHHmm",
     "tag_template": "UMI_{timestamp}_{variant}",
     "asset_base_template": "UMI_{timestamp}_{variant}_Build",
+    "module_asset_template": "UMI_{timestamp}_DAC_Module_Build.zip",
     "variant_names": {
         "original": "Original",
         "magisk": "Magisk",
@@ -188,6 +189,63 @@ expected_release_naming = {
 }
 if data.get("release_naming") != expected_release_naming:
     fail("release naming contract changed")
+
+expected_userspace_toolchain = {
+    "name": "android-ndk-r27d",
+    "revision": "27.3.13750724",
+    "target": "aarch64-linux-android35",
+    "linux_archive_sha1": "22105e410cf29afcf163760cc95522b9fb981121",
+}
+if data.get("userspace_toolchain") != expected_userspace_toolchain:
+    fail("userspace toolchain contract changed")
+
+expected_userspace_module = {
+    "role": "optional-dac-and-vendor-cloud-control-layer",
+    "kernel_variant": False,
+    "root_manager_apis_required": False,
+    "supported_installers": ["magisk", "kernelsu", "sukisu"],
+    "joyose_policy": "block-remote-control-preserve-local-compatibility",
+}
+if data.get("userspace_module") != expected_userspace_module:
+    fail("userspace DAC module contract changed")
+
+for path in (
+    "Documentation/dragonkernel/optimization/00_REPO_AUDIT.md",
+    "Documentation/dragonkernel/optimization/01_RUNTIME_AUDIT.md",
+    "Documentation/dragonkernel/optimization/02_BASELINE_METRICS.md",
+    "Documentation/dragonkernel/optimization/03_DAC_ARCHITECTURE.md",
+    "Documentation/dragonkernel/optimization/04_CPU_POLICY.md",
+    "Documentation/dragonkernel/optimization/05_FREEZER.md",
+    "Documentation/dragonkernel/optimization/06_GAME_CONTROLLER.md",
+    "Documentation/dragonkernel/optimization/07_THERMAL.md",
+    "Documentation/dragonkernel/optimization/08_VALIDATION.md",
+    "scripts/dragonkernel/diagnostics/capture_runtime.py",
+    "scripts/dragonkernel/package_dac_module.py",
+    "tools/dragon-dac/src/main.cpp",
+    "tools/dragon-dac/module/module.prop",
+    "tools/dragon-dac/module/config/dac.conf",
+    "tools/dragon-dac/module/customize.sh",
+    "tools/dragon-dac/module/service.sh",
+    "tools/dragon-dac/module/uninstall.sh",
+    "tools/dragon-dac/module/action.sh",
+    ".github/workflows/dac-module-validation.yml",
+):
+    if not (ROOT / path).is_file():
+        fail(f"optimization contract file missing: {path}")
+
+diagnostics_source = indexed_text("scripts/dragonkernel/diagnostics/capture_runtime.py")
+for token in ("joyose_package", "joyose_runtime", "read_only", "--self-test"):
+    if token not in diagnostics_source:
+        fail("read-only runtime diagnostics contract changed")
+
+dac_source = indexed_text("tools/dragon-dac/src/main.cpp")
+for token in ("epoll_create1", "timerfd_create", "signalfd", "inotify_init1", "owned_resources"):
+    if token not in dac_source:
+        fail("DAC event-loop skeleton contract changed")
+module_config = indexed_text("tools/dragon-dac/module/config/dac.conf")
+for token in ("dac.enabled=false", "dac.dry_run=true", "dac.cloud_control.remote=observe"):
+    if token not in module_config:
+        fail("DAC safe default contract changed")
 
 for name, upstream in data["upstreams"].items():
     if not re.fullmatch(r"[0-9a-f]{40}", upstream["commit"]):

@@ -56,6 +56,12 @@
     "ref": "lineage-20.0",
     "commit": "54220fd601050b350b2af7adc913089ebf0e7aed"
   },
+  "userspace_toolchain": {
+    "name": "android-ndk-r27d",
+    "revision": "27.3.13750724",
+    "target": "aarch64-linux-android35",
+    "linux_archive_sha1": "22105e410cf29afcf163760cc95522b9fb981121"
+  },
   "boot_tools": {
     "avbtool": {
       "url": "https://android.googlesource.com/platform/external/avb",
@@ -147,6 +153,7 @@
     "timestamp_format": "yyyyMMddHHmm",
     "tag_template": "UMI_{timestamp}_{variant}",
     "asset_base_template": "UMI_{timestamp}_{variant}_Build",
+    "module_asset_template": "UMI_{timestamp}_DAC_Module_Build.zip",
     "variant_names": {
       "original": "Original",
       "magisk": "Magisk",
@@ -172,6 +179,17 @@
         "application"
       ]
     }
+  },
+  "userspace_module": {
+    "role": "optional-dac-and-vendor-cloud-control-layer",
+    "kernel_variant": false,
+    "root_manager_apis_required": false,
+    "supported_installers": [
+      "magisk",
+      "kernelsu",
+      "sukisu"
+    ],
+    "joyose_policy": "block-remote-control-preserve-local-compatibility"
   },
   "required_device_inputs": {
     "private_rom": null,
