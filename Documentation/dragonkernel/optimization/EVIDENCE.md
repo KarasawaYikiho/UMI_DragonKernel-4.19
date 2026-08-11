@@ -125,3 +125,5 @@ Major-version GitHub Action tags are movable and do not bind a final source SHA 
 ### Risk, compatibility and test plan
 
 Pinned Actions retain their reviewed major versions but require an explicit commit update for future upgrades. Run Project contract, DAC validation and all four five-device kernel matrices because every workflow checkout/upload path changed; retain build and artifact evidence from the pinned workflow SHA.
+
+The manual Release preflight binds a full base/candidate pair, scans only added diff lines for a small set of release-blocking hazards, rejects private/Agent/cache paths and escaping symlinks, and emits affected owner scopes. It deliberately records that full security and conflict reviews remain required.

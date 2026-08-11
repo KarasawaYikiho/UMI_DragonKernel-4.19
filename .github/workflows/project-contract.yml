@@ -65,11 +65,12 @@ jobs:
       - run: python3 scripts/dragonkernel/diagnostics/capture_runtime.py --self-test
       - run: python3 scripts/dragonkernel/package_dac_module.py --self-test
       - run: python3 scripts/dragonkernel/validate_dac_module.py --self-test
+      - run: python3 scripts/dragonkernel/release_preflight.py --self-test
       - run: python3 scripts/dragonkernel/refresh_avb_footer.py --self-test
       - run: python3 scripts/dragonkernel/package_anykernel.py --self-test
       - run: scripts/dragonkernel/validate_magisk_artifact.sh --self-test
       - run: bash -n $SHELL_SCRIPTS
       - run: |
-          for script in $SHELL_SCRIPTS scripts/dragonkernel/release_name.py scripts/dragonkernel/refresh_avb_footer.py scripts/dragonkernel/package_anykernel.py; do
+          for script in $SHELL_SCRIPTS scripts/dragonkernel/release_name.py scripts/dragonkernel/release_preflight.py scripts/dragonkernel/refresh_avb_footer.py scripts/dragonkernel/package_anykernel.py; do
             test -x "$script"
           done

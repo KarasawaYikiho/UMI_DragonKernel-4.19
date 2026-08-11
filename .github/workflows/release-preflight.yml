@@ -1,0 +1,40 @@
+name: Release security preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_sha:
+        description: Last reviewed full commit SHA
+        required: true
+        type: string
+      candidate_sha:
+        description: Final candidate full commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 0
+      - run: python3 scripts/dragonkernel/verify_baseline.py
+      - run: python3 scripts/dragonkernel/release_preflight.py --self-test
+      - run: >-
+          python3 scripts/dragonkernel/release_preflight.py
+          --base "$BASE_SHA"
+          --candidate "$CANDIDATE_SHA"
+          --output release-preflight.json
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-security-preflight
+          path: release-preflight.json
+          if-no-files-found: error

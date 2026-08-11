@@ -223,6 +223,7 @@ for path in (
     "scripts/dragonkernel/diagnostics/capture_runtime.py",
     "scripts/dragonkernel/package_dac_module.py",
     "scripts/dragonkernel/validate_dac_module.py",
+    "scripts/dragonkernel/release_preflight.py",
     "tools/dragon-dac/src/main.cpp",
     "tools/dragon-dac/src/cpu_backend.h",
     "tools/dragon-dac/src/policy.h",
@@ -233,6 +234,7 @@ for path in (
     "tools/dragon-dac/module/uninstall.sh",
     "tools/dragon-dac/module/action.sh",
     ".github/workflows/dac-module-validation.yml",
+    ".github/workflows/release-preflight.yml",
 ):
     if not (ROOT / path).is_file():
         fail(f"optimization contract file missing: {path}")
