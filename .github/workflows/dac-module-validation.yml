@@ -7,6 +7,7 @@ on:
       - "Documentation/dragonkernel/baseline.json"
       - "scripts/dragonkernel/package_dac_module.py"
       - "scripts/dragonkernel/release_name.py"
+      - "scripts/dragonkernel/validate_dac_module.py"
       - "tools/dragon-dac/**"
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - "Documentation/dragonkernel/baseline.json"
       - "scripts/dragonkernel/package_dac_module.py"
       - "scripts/dragonkernel/release_name.py"
+      - "scripts/dragonkernel/validate_dac_module.py"
       - "tools/dragon-dac/**"
   workflow_dispatch:
 
@@ -32,6 +34,7 @@ jobs:
             Documentation/dragonkernel/baseline.json
             scripts/dragonkernel/package_dac_module.py
             scripts/dragonkernel/release_name.py
+            scripts/dragonkernel/validate_dac_module.py
             tools/dragon-dac
       - name: Host self-test
         run: |
@@ -39,6 +42,7 @@ jobs:
             tools/dragon-dac/src/main.cpp -o /tmp/dragon-dac-host
           /tmp/dragon-dac-host --self-test
           python3 scripts/dragonkernel/package_dac_module.py --self-test
+          python3 scripts/dragonkernel/validate_dac_module.py --self-test
       - name: Install pinned Android NDK
         run: |
           revision=$(python3 -c 'import json; print(json.load(open("Documentation/dragonkernel/baseline.json"))["userspace_toolchain"]["revision"])')
@@ -69,6 +73,8 @@ jobs:
             --binary out/dragon-dac --output-dir out/b --timestamp "$timestamp"
           cmp out/a/*.zip out/b/*.zip
           (cd out/a && sha256sum -c *.sha256)
+          python3 scripts/dragonkernel/validate_dac_module.py \
+            --zip out/a/*.zip --checksum out/a/*.sha256
           cp out/a/*.zip out/a/*.sha256 out/
       - uses: actions/upload-artifact@v6
         with:

@@ -41,3 +41,7 @@ Project contract, Python/module self-tests, YAML and shell syntax, CI host self-
 The first module CI run rejected an unchecked `timerfd` read under `-Werror`. The follow-up handles short/error reads by entering SAFE and recording the failure; no policy write is attempted.
 
 The next run passed host and Android arm64 builds, then exposed a validation working-directory error. The checksum is intentionally portable and names only the ZIP basename, so CI now verifies it from the artifact directory.
+
+`8df152184620` passed Project contract and DAC module validation. The downloaded module artifact passed its portable checksum, fixed inventory and modes, AArch64 ELF, no-external-libc++ and safe-default checks. Six fast Original device builds for the unchanged kernel snapshot also completed successfully.
+
+The Hyper3 static audit confirms Joyose is not thermal-only: it has boot and network capability plus scheduler, game/performance, thermal and memory policy signals. It uses a shared system UID, so UID-wide network blocking is rejected because it could affect unrelated system services. Cloud isolation remains observe-only until the internal remote-delivery/local-policy boundary is isolated without disabling required local behavior.

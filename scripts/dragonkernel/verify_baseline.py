@@ -221,6 +221,7 @@ for path in (
     "Documentation/dragonkernel/optimization/08_VALIDATION.md",
     "scripts/dragonkernel/diagnostics/capture_runtime.py",
     "scripts/dragonkernel/package_dac_module.py",
+    "scripts/dragonkernel/validate_dac_module.py",
     "tools/dragon-dac/src/main.cpp",
     "tools/dragon-dac/module/module.prop",
     "tools/dragon-dac/module/config/dac.conf",
