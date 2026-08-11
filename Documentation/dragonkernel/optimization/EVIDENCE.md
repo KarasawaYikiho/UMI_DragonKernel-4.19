@@ -179,3 +179,5 @@ The read-only capture covered kernel mechanisms but omitted the runtime owner ev
 ### Risk, compatibility, rollback and test plan
 
 The collector writes no device node and treats unavailable Hyper3/Lineage capabilities as data, not failure. Original uses shell-readable evidence; an explicit `--su` mode supports the same static probes after a Root variant is installed. It does not enable a DAC backend or begin A/B. Project contract self-tests unique probe names, required coverage, command construction and forbidden mutating shell tokens; removing the probe entries is the complete rollback.
+
+`0e24dac61e98` passed Project contract run `31488558114`; the expanded capture self-test and all five-device static contracts passed without a local build.
