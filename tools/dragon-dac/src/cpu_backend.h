@@ -27,6 +27,11 @@ struct SchedAttr {
 
 class CpuBackend {
  public:
+  ~CpuBackend() {
+    std::string ignored;
+    restore_all(&ignored);
+  }
+
   static bool valid_bounds(uint32_t util_min, uint32_t util_max) {
     return util_min <= util_max && util_max <= 1024;
   }
@@ -75,10 +80,14 @@ class CpuBackend {
 
   bool restore_all(std::string* error) {
     bool restored = true;
+    std::map<int, Record> remaining;
     for (const auto& [tid, record] : records_) {
       SchedAttr current;
       if (!get(tid, &current)) {
-        if (errno != ESRCH) restored = false;
+        if (errno != ESRCH) {
+          restored = false;
+          remaining.emplace(tid, record);
+        }
         continue;
       }
       if (!same_clamps(current, record.applied)) {
@@ -89,9 +98,12 @@ class CpuBackend {
       original.flags |= kUtilClampMin | kUtilClampMax;
       original.util_min = record.original.util_min;
       original.util_max = record.original.util_max;
-      if (!set(tid, original)) restored = false;
+      if (!set(tid, original)) {
+        restored = false;
+        remaining.emplace(tid, record);
+      }
     }
-    records_.clear();
+    records_.swap(remaining);
     if (!restored) *error = "one or more uclamp owners could not be restored";
     return restored;
   }

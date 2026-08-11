@@ -143,3 +143,5 @@ The daemon must also fail closed when event-loop descriptors, config watches or 
 The module daemon takes a nonblocking lock scoped to its state directory, state temporary files reject symlinks, and install directories are root-only. Uninstall resolves `/proc/<pid>/exe` before signalling, so an unrelated process with the same name is not terminated.
 
 Joyose cgroup directories reject final-component symlinks. Membership exclusivity is checked before and immediately after BPF link creation, then on every low-frequency reconcile; any change detaches all owned links and enters SAFE. Concurrent migration remains an explicit device stress gate.
+
+The disabled uclamp backend now attempts rollback on destruction. A transient read/write failure retains only records that may still be DAC-owned for retry; dead threads are complete, while externally changed clamps are never overwritten.
