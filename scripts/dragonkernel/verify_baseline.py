@@ -112,6 +112,22 @@ if {
 } != expected_capacity_mah:
     fail("device battery capacity contract changed")
 
+expected_rom_profiles = {
+    "umi": ("Hyper3", 1),
+    "cmi": ("Hyper3", 1),
+    "cas": ("Hyper3", 1),
+    "thyme": ("Lineage_**Latest**", 1),
+    "apollo": ("Lineage_**Latest**", 1),
+}
+if {
+    device["codename"]: (
+        device.get("validation_rom_reference"),
+        device.get("validation_profiles"),
+    )
+    for device in devices
+} != expected_rom_profiles:
+    fail("device ROM validation profile contract changed")
+
 
 def indexed_text(path: str) -> str:
     worktree_path = ROOT / path
@@ -318,6 +334,14 @@ for field in ("apk_sha256", "binary_sha256"):
     if not re.fullmatch(r"[0-9a-f]{64}", magiskboot.get(field, "")):
         fail(f"invalid magiskboot {field}")
 
+payload_dumper = data.get("boot_tools", {}).get("payload_dumper", {})
+if payload_dumper != {
+    "version": "v0.1.6",
+    "url": "https://github.com/xishang0128/payload-dumper-go/releases/download/v0.1.6/payload-dumper-linux-amd64-v3.tar.gz",
+    "archive_sha256": "c2960706e7f8d6e5a7f9b42ec55b7997828120de47a3b8a9de93c2cb7dc44503",
+}:
+    fail("unexpected payload dumper lock")
+
 avbtool = data.get("boot_tools", {}).get("avbtool", {})
 if avbtool != {
     "url": "https://android.googlesource.com/platform/external/avb",
@@ -439,6 +463,15 @@ for token in (
 ):
     if token not in build_source:
         fail("device charging configuration gate changed")
+
+rom_prepare_source = indexed_text("scripts/dragonkernel/prepare_rom_boot.sh")
+for token in (
+    'payload-dumper-v0.1.6/payload-dumper',
+    'extract "$input" -p boot',
+    '"$work/payload/boot.img"',
+):
+    if token not in rom_prepare_source:
+        fail("OTA payload boot extraction contract changed")
 
 kheaders_source = (ROOT / "kernel/gen_kheaders.sh").read_text(encoding="utf-8")
 for token in (

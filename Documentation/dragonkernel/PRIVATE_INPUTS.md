@@ -1,12 +1,14 @@
 # 私有输入规则
 
-以下内容不得进入 Git、提交信息、Issue、PR、公开日志、Actions 缓存、Artifact 元数据或 Release：
+私有输入的身份、路径、版本、来源、名称、地址、文件清单、大小、摘要、归档结构、元数据、图像、日志、镜像、密钥和签名材料不得进入 Git、提交信息、Issue、PR、Actions、缓存、Artifact 或 Release。
 
-- 输入身份、路径、版本、来源、下载地址、名称和可识别标记
-- 文件列表、大小、哈希、归档结构、解析元数据、图片和日志
-- 原始镜像、密钥、签名材料和个人信息
+公开文档只使用以下引用：
 
-## 本地 ROM 适配
+- `umi`、`cmi`、`cas`：`Hyper3`
+- `thyme`、`apollo`：`Lineage_**Latest**`
+- `Lineage_**Latest**` 包与对应镜像目录必须解析为同一 boot；`thyme` 与 `apollo` 各保留一个档案
+
+## 本地命令
 
 ```bash
 scripts/dragonkernel/prepare_rom_boot.sh <private-input> <device>
@@ -14,8 +16,8 @@ scripts/dragonkernel/validate_rom_artifact.sh <device> <artifact-dir> <output-bo
 scripts/dragonkernel/validate_magisk_artifact.sh <device> <original-artifact-dir> <output-boot.img>
 ```
 
-- 输入保存在仓库外或被忽略目录；路径只通过参数或环境变量传入。
-- 脚本只输出通用成功或失败结果，不打印输入身份和内容清单。
-- boot 模板、重打包结果和设备日志只用于本地验证，不上传。
-- 未建立批准的非公开注入通道前，CI 只能处理公开源码产物，不能生成正式 ROM 刷机包。
-- Magisk 模板必须由目标设备使用 Magisk App 修补自身 ROM 镜像，并保存到忽略目录；脚本只保真替换 Original 内核并检查 Magisk ramdisk。
+- 输入和输出只能位于仓库外或被 Git 忽略的目录。
+- 脚本只能输出通用成功/失败结果，不打印私有身份或内容。
+- 每个 ROM 档案只用于其来源设备；不得跨型号复用。
+- CI 只处理公开源码产物；正式 ROM 刷写包必须等待安全的非公开注入流程与实机门禁。
+- Magisk 模板由目标设备使用 Magisk App 修补自身 ROM 镜像；本地只替换 Original 内核并验证 ramdisk 保持。

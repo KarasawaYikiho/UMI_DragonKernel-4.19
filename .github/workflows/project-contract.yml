@@ -25,6 +25,7 @@ jobs:
         scripts/dragonkernel/prepare_bbg.sh
         scripts/dragonkernel/prepare_avbtool.sh
         scripts/dragonkernel/prepare_magiskboot.sh
+        scripts/dragonkernel/prepare_payload_dumper.sh
         scripts/dragonkernel/prepare_anykernel3.sh
         scripts/dragonkernel/prepare_rom_boot.sh
         scripts/dragonkernel/repack_boot.sh

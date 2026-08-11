@@ -1,44 +1,34 @@
 # 执行流程
 
-## 不可跳过的门禁
+## O：优化完成门禁
 
-1. 改动必须限定在一个可审查机制，并保留可回退提交。
-2. 静态检查通过后，先运行单设备快速 Actions，再运行相关变体的五设备完整矩阵。
-3. 从 Actions 下载代表产物，复核配置、构建日志、内外层 SHA-256 和设备专用驱动对象。
-4. 使用私有 ROM boot 模板完成头部、ramdisk、AVB、分区尺寸和内核回读检查。
-5. 调度、温控、电池和系统交互优化全部完成后，才进入 Original 实机 A/B。
-6. Original 通过后再验证 KernelSU、SukiSU、Magisk、SUSFS、KPM 和三层 Root 隐藏。
-7. 五设备硬件回归全部通过后，CI 才能生成正式 Release。
+1. 冻结调度：WALT、schedutil、UCLAMP、Binder、boost、迁移、RT 饥饿和温控降频交互。
+2. 冻结内存与 I/O：PSI、回收、zram、BFQ/WBT、F2FS、写回和前后台压力。
+3. 冻结温控与充电：删除 `thermal_message` 后，确认 thermal zone、TSENS、BCL、LMH、冷却设备和硬件保护完整；禁止抬高或绕过安全限制。
+4. 冻结电池解容：启动容量按机型；仅保留自动学习到的高容量；手动写入仍受原厂值限制；电气、认证和温度保护不变。
+5. 冻结 ROM 结构：`Hyper3` 覆盖 `umi`/`cmi`/`cas`；`Lineage_**Latest**` 覆盖 `thyme`/`apollo`；包与镜像目录必须解析为同一 boot。
+6. 冻结构建：优先 GitHub Actions 和下载 Artifact；每次源码改动通过 Project contract、受影响快速任务、完整五机型矩阵、产物复核和同 SHA 复现。
+7. 清理非必要缓存，仅保留 `main`、干净工作树、必要文档和可复用构建缓存。
 
-结构检查、编译成功或临时重打包均不能替代实机证据。
+Gate O 未全部通过时，禁止刷写、启动、跑分、电池学习或其他实机验证。
 
-Magisk 复用 Original 内核。目标设备先用 Magisk App 修补自身 ROM 镜像，本地门禁再替换内核并确认 ramdisk 未改变；禁止集中修补或共享已修补镜像。
+## D：实机验证
 
-BBG 只作为默认关闭的 KernelSU + SUSFS 验证叠加层。启用时拦截 Root 派生上下文对关键分区和 boot 的写入，recovery 保护保持关闭；实机必须同时验证恶意写入被拒绝、正常系统更新不回退，以及 recovery/fastboot 可恢复。
+1. 最终 Original 先验证安全启动、回滚和五机型硬件矩阵。
+2. 固定设备、ROM、温度、电量和负载，执行系统桌面与澎湃超级岛 A/B。内核禁止按包名或进程名添加特判。
+3. 验证启动容量、扩容学习/FCC、持久化、充放电和全部保护。
+4. Original 通过后依次验证 KernelSU、SukiSU、Magisk 的 Root、管理器/注入和应用检测隐藏。
+5. 单独验证 BBG、候选 ZIP、Recovery/Fastboot 刷写与回滚。
 
-可刷候选包固定 AnyKernel3 提交，只携带目标设备与变体的 Image，复用当前槽 boot 的 ramdisk、模块、DTB/DTBO 和 vbmeta 状态。候选包仅用于门禁验证，不是 Release。
+任何功能、性能、温度、功耗或稳定性回退都返回 O 阶段。
 
-## 优化边界
+## R：发布
 
-- 只优化可复用的调度、频率、内存、I/O、网络和热管理机制。
-- 禁止按应用包名或进程名写入内核特判。
-- 系统桌面和澎湃超级岛是重点 A/B 场景，不是硬编码目标。
-- 改善必须同时观察帧时间、交互延迟、温度、功耗、后台负载、内存压力和稳定性；任一关键指标回退即撤销。
-- 电池解容只取消 FG 初始化时对高学习容量的原厂值恢复；启动初值仍来自型号配置，不开放高容量手动写入，不绕过充电电压、电流、认证或温度保护。
-
-## 构建边界
-
-- 优先使用 GitHub Actions 和下载产物验证。
-- 本地编译仅允许在 WSL 2 ext4 中进行验证，不得作为 Release 来源。
-- 快速构建只用于单设备、单变体迭代；合并门禁仍是完整矩阵。
-- 构建时间来自提交时间；IKHEADERS 归档固定成员顺序、时间和属主。相同提交的 Image 与候选 ZIP 必须逐字节一致。
-- 私有 ROM、镜像、密钥、日志及其身份信息不得进入 Git、缓存、Artifact 或公开元数据。
-
-## 发布命名
+全部实机门禁通过后，CI 从干净提交重新构建、打包、哈希并发布：
 
 - 时区：`Asia/Shanghai`
 - Tag：`UMI_<yyyyMMddHHmm>_<Variant>`
-- 主资产：`UMI_<yyyyMMddHHmm>_<Variant>_Build.zip`
+- Asset：`UMI_<yyyyMMddHHmm>_<Variant>_Build.zip`
 - Variant：`Original`、`Magisk`、`KernelSU`、`SukiSU_KPM_SUSFS`
 
-任一设备未完成启动、硬件、性能、温控、功耗和恢复路径验证时，禁止标记稳定或发布就绪。
+构建或结构验证通过不能替代实机证据。

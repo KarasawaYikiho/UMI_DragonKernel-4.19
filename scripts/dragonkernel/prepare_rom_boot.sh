@@ -24,8 +24,17 @@ extract_zip() {
   entry=$(unzip -Z1 "$input" | awk -F/ '
     tolower($NF) == "boot.img" { count++; selected=$0 }
     END { if (count == 1) print selected; else exit 1 }
-  ')
-  unzip -p "$input" "$entry" > "$boot"
+  ') || true
+  if [[ -n "$entry" ]]; then
+    unzip -p "$input" "$entry" > "$boot"
+    return
+  fi
+
+  local payload_dumper=${PAYLOAD_DUMPER:-"$HOME/toolchains/payload-dumper-v0.1.6/payload-dumper"}
+  test -x "$payload_dumper"
+  mkdir "$work/payload"
+  "$payload_dumper" extract "$input" -p boot -o "$work/payload" >/dev/null 2>&1
+  install -m 0600 "$work/payload/boot.img" "$boot"
 }
 
 extract_tar() {

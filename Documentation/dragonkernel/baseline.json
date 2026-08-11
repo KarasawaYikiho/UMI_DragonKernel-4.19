@@ -8,27 +8,37 @@
       {
         "codename": "umi",
         "config": "arch/arm64/configs/vendor/xiaomi/umi.config",
-        "battery_capacity_mah": 4780
+        "battery_capacity_mah": 4780,
+        "validation_rom_reference": "Hyper3",
+        "validation_profiles": 1
       },
       {
         "codename": "cmi",
         "config": "arch/arm64/configs/vendor/xiaomi/cmi.config",
-        "battery_capacity_mah": 4500
+        "battery_capacity_mah": 4500,
+        "validation_rom_reference": "Hyper3",
+        "validation_profiles": 1
       },
       {
         "codename": "cas",
         "config": "arch/arm64/configs/vendor/xiaomi/cas.config",
-        "battery_capacity_mah": 4500
+        "battery_capacity_mah": 4500,
+        "validation_rom_reference": "Hyper3",
+        "validation_profiles": 1
       },
       {
         "codename": "thyme",
         "config": "arch/arm64/configs/vendor/xiaomi/thyme.config",
-        "battery_capacity_mah": 4780
+        "battery_capacity_mah": 4780,
+        "validation_rom_reference": "Lineage_**Latest**",
+        "validation_profiles": 1
       },
       {
         "codename": "apollo",
         "config": "arch/arm64/configs/vendor/xiaomi/apollo.config",
-        "battery_capacity_mah": 5000
+        "battery_capacity_mah": 5000,
+        "validation_rom_reference": "Lineage_**Latest**",
+        "validation_profiles": 1
       }
     ]
   },
@@ -57,6 +67,11 @@
       "url": "https://github.com/topjohnwu/Magisk/releases/download/v30.7/Magisk-v30.7.apk",
       "apk_sha256": "e0d32d2123532860f97123d927b1bb86c4e08e6fd8a48bfc6b5bee0afae9ebd5",
       "binary_sha256": "a18ecbd7981179494b7d281453d6c4e25b5c719e7d2ef7f6eba3c6be3043c58e"
+    },
+    "payload_dumper": {
+      "version": "v0.1.6",
+      "url": "https://github.com/xishang0128/payload-dumper-go/releases/download/v0.1.6/payload-dumper-linux-amd64-v3.tar.gz",
+      "archive_sha256": "c2960706e7f8d6e5a7f9b42ec55b7997828120de47a3b8a9de93c2cb7dc44503"
     },
     "anykernel3": {
       "url": "https://github.com/osm0sis/AnyKernel3.git",

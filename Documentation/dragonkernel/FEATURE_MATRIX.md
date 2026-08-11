@@ -1,21 +1,20 @@
 # 功能状态
 
-状态只使用：未开始、已实现、构建通过、实机通过、已发布。
-
-| 能力 | 当前状态 | 下一门禁 |
+| 能力 | 状态 | 下一门禁 |
 |---|---|---|
-| 五设备 LineageOS 基线 | 构建通过 | 最终 Original 实机硬件回归 |
-| WALT、schedutil、UCLAMP、前台 Binder、输入 boost | 构建通过 | 同机同 ROM 调度与交互 A/B |
-| Xiaomi `thermal_message` 云控邮箱移除 | 构建通过 | TSENS、BCL、LMH、充电和过热回归 |
-| 电池容量解限 | 构建通过 | 核对五机型启动容量、学习/FCC 超过原厂值和充放电回归 |
-| 私有 ROM boot 结构适配工具 | 已实现 | 使用目标 ROM 与最终 Original Artifact 配对 |
-| 单设备/单变体 ccache 快速构建 | 构建通过 | 实际内核源码增量提交后的缓存复用 |
-| Original | 构建通过 | 五设备临时启动和硬件矩阵 |
-| KernelSU + SUSFS | 构建通过 | 启动、Root、管理器与应用检测 |
-| SukiSU + KPM + SUSFS | 构建通过 | 启动、Root、KPM、管理器与应用检测 |
-| Magisk | 已实现 | 同机 App 修补模板、五设备结构配对、启动/Root 与三层隐藏 |
-| BBG 验证叠加层 | 构建通过 | 关键分区拦截、正常系统更新和 recovery/fastboot 恢复回归 |
-| Image-only 可刷候选 ZIP | 构建通过 | 目标 ROM 配对、recovery 刷写与恢复路径实机回归 |
-| 正式 Release | 未开始 | 五设备全变体实机门禁与 CI 发布 |
+| 五机型内核基线 | 构建通过 | 最终 Original 实机回归 |
+| WALT/schedutil/UCLAMP/Binder/boost | 构建通过 | 桌面与澎湃超级岛同机 A/B |
+| 标准温控与充电保护 | 构建通过 | 实机热负载、充电和过热回归 |
+| Xiaomi `thermal_message` 云控删除 | 构建通过 | 确认标准保护链无回退 |
+| 电池解容 | 构建通过 | 启动容量、学习 FCC、持久化和保护回归 |
+| Original | 五机型构建通过 | 五机型实机矩阵 |
+| KernelSU + SUSFS | 五机型构建通过 | Root、管理器、注入与应用检测 |
+| SukiSU + KPM + SUSFS | 五机型构建通过 | Root、KPM、管理器、注入与应用检测 |
+| Magisk | 结构链已实现 | 每机型专属模板与三层隐藏验证 |
+| BBG | 五机型构建通过 | 写保护、正常更新和恢复路径 |
+| Image-only 候选 ZIP | 构建通过 | Recovery 刷写与回滚 |
+| `Hyper3` ROM 结构 | `umi`/`cmi`/`cas` 通过 | 最终提交重新配对 |
+| `Lineage_**Latest**` ROM 结构 | `thyme`/`apollo` 通过 | 最终提交重新配对 |
+| 正式 Release | 未开始 | 全部实机门禁通过 |
 
-系统桌面和澎湃超级岛纳入最终交互 A/B；内核不得按应用名称添加特判。没有实机证据时，任何能力不得标记为实机通过或已发布。
+内核优化只使用通用机制，不按包名或进程名特判系统桌面、澎湃超级岛或其他软件。没有实机证据的能力不得标记为实机通过或已发布。

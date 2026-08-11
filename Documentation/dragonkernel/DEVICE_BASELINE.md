@@ -1,37 +1,32 @@
 # 设备与 ROM 门禁
 
-## 设备
+| 设备 | 启动设计容量 | ROM 参考 | 档案要求 |
+|---|---:|---|---|
+| `umi` | 4780 mAh | `Hyper3` | 独立 |
+| `cmi` | 4500 mAh | `Hyper3` | 独立 |
+| `cas` | 4500 mAh，双电芯合计 | `Hyper3` | 独立 |
+| `thyme` | 4780 mAh | `Lineage_**Latest**` | 独立替代参考 |
+| `apollo` | 5000 mAh | `Lineage_**Latest**` | 独立替代参考 |
 
-| 设备 | 配置 | 启动容量 |
-|---|---|---:|
-| `umi` | `arch/arm64/configs/vendor/xiaomi/umi.config` | 4780 mAh |
-| `cmi` | `arch/arm64/configs/vendor/xiaomi/cmi.config` | 4500 mAh |
-| `cas` | `arch/arm64/configs/vendor/xiaomi/cas.config` | 4500 mAh（双电芯合计） |
-| `thyme` | `arch/arm64/configs/vendor/xiaomi/thyme.config` | 4780 mAh |
-| `apollo` | `arch/arm64/configs/vendor/xiaomi/apollo.config` | 5000 mAh |
+共同基线为 ARM64、Qualcomm Kona、Linux 4.19.325、4 KiB page 和 Android Clang r416183b。配置、设备树、boot 模板和验证输出不得跨型号或跨档案复用。
 
-共同基线：ARM64 / Qualcomm Kona、Linux `4.19.325`、4 KiB page、Android Clang `r416183b`。每台设备必须使用自己的配置、设备树和 boot 模板。
+## 结构门禁
 
-## ROM 结构适配
+1. 从 raw boot、归档或 OTA payload 中只提取目标 `boot.img`。
+2. 下载同一提交、同一设备的 Original Actions Artifact，校验摘要、配置、Image 和构建对象。
+3. 只替换目标 boot 中的 Image；保留 ramdisk、header、AVB 参数、分区尺寸、模块和 DTB/DTBO 策略。
+4. 重打包后校验尺寸、AVB footer 和内核回读。
+5. `Lineage_**Latest**` 包与镜像目录中的 boot 必须一致；`thyme` 和 `apollo` 各输出一个结果。
 
-1. `prepare_rom_boot.sh` 从私有 raw boot、ZIP、TAR 或 TGZ 中提取唯一的 `boot.img`。
-2. 从目标提交的 Actions Artifact 取得对应设备 `Image` 和 `.config`。
-3. `validate_rom_artifact.sh` 校验设备配置和 ARM64 Image，再替换私有模板中的内核。
-4. 重打包必须保留 ROM ramdisk、boot header、AVB 参数和分区尺寸，并通过内核回读。
-5. stock DTBO、`vendor_boot` 和 `vendor_dlkm` 默认不变；没有设备树或模块 ABI 证据时禁止替换。
-
-结构适配通过不等于可启动或兼容。
+结构门禁通过不等于可启动或 ROM 兼容。
 
 ## 实机门禁
 
-实机阶段只能在优化作业完成后，使用最终 Original CI 产物开始：
+实机验证仅在调度、温控、电池、ROM 结构和构建路径全部完成后开始，并先验证最终 Original：
 
-1. 校验设备、镜像头、分区尺寸、DTB/DTBO、ramdisk 和 AVB。
-2. 优先临时启动；保留已验证恢复镜像和恢复命令。
-3. 回归解密、触摸、指纹、相机、音频、通信、无线、充电、温控、待机、重启和传感器。
-4. 固定 ROM、温度、电量、动画、后台进程和操作脚本，执行同机 A/B。
-5. 覆盖桌面冷/热启动、滑页、组件、文件夹、最近任务、应用启动、手势回桌面，以及澎湃超级岛展开、收起、动画和连续状态更新。
-6. 记录帧时间 P50/P95/P99、卡顿、输入延迟、CPU 频率/驻留、唤醒/迁移、内存 PSI、温度、功耗和稳定性。
-7. 核对启动设计容量符合型号；使用对应扩容电池完成学习周期，确认学习容量/FCC 可超过原厂值，且无需写入设计容量，充电电压、电流、认证和温度保护不变。
+- 安全启动、回滚、解密、触摸、指纹、相机、音频、通信、无线、充电、传感器、待机与重启
+- 同设备同 ROM 的系统桌面与澎湃超级岛 A/B；记录帧时间 P50/P95/P99、卡顿、输入延迟、CPU 驻留、迁移、PSI、温度、功耗和稳定性
+- 核对机型启动容量及扩容电池学习/FCC；不得绕过任何电气、认证或温度保护
+- Original 通过后才验证 Root 变体、BBG、刷写包和恢复路径
 
-任何温度、功耗、后台负载、硬件功能或稳定性回退都阻止进入 Root 变体和 Release。
+任何关键回退都会关闭实机门禁并返回源码优化阶段。
