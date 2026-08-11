@@ -38,7 +38,7 @@ def validate(module_zip: Path, checksum: Path) -> None:
         if b"libc++_shared.so" in binary:
             fail("daemon has an unbundled libc++ dependency")
         properties = archive.read("module.prop").decode("utf-8").splitlines()
-        if not {"id=dragon_dac", "version=0.7.4", "versionCode=11"} <= set(properties):
+        if not {"id=dragon_dac", "version=0.8.0", "versionCode=12"} <= set(properties):
             fail("module identity changed")
         config = set(archive.read("config/dac.conf").decode("utf-8").splitlines())
         for token in (
@@ -56,6 +56,18 @@ def validate(module_zip: Path, checksum: Path) -> None:
         uninstall = archive.read("uninstall.sh")
         if b'readlink "/proc/$pid/exe"' not in uninstall or b"kill -TERM" not in uninstall:
             fail("uninstall process ownership guard changed")
+        service = archive.read("service.sh")
+        for token in (
+            b"sys.boot_completed",
+            b'readlink "/proc/$pid/exe"',
+            b'while [ "$failures" -lt 3 ]',
+            b"sleep 30",
+            b"crash-loop",
+            b'--heartbeat "$heartbeat"',
+            b'kill -KILL "$pid"',
+        ):
+            if token not in service:
+                fail("service watchdog contract changed")
 
 
 def self_test() -> None:

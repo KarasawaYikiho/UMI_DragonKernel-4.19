@@ -16,6 +16,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <csignal>
+#include <ctime>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -34,6 +35,7 @@
 namespace {
 
 constexpr int kMaxEvents = 4;
+constexpr uint64_t kHeartbeatIntervalSeconds = 30;
 
 struct Config {
   bool enabled = false;
@@ -424,6 +426,12 @@ bool atomic_write(const std::string& path, const std::string& data) {
   return true;
 }
 
+uint64_t boottime_seconds() {
+  timespec value {};
+  if (clock_gettime(CLOCK_BOOTTIME, &value) != 0 || value.tv_sec < 0) return 0;
+  return static_cast<uint64_t>(value.tv_sec);
+}
+
 void close_fds(std::initializer_list<int> descriptors) {
   for (const int descriptor : descriptors) {
     if (descriptor >= 0) close(descriptor);
@@ -550,7 +558,7 @@ int run_self_test() {
 }
 
 int run_daemon(const std::string& config_path, const std::string& state_path,
-               bool force_dry_run) {
+               const std::string& heartbeat_path, bool force_dry_run) {
   const std::string lock_path = parent_path(state_path) + "/daemon.lock";
   const int lock_fd = open(lock_path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0600);
   if (lock_fd < 0 || flock(lock_fd, LOCK_EX | LOCK_NB) != 0) {
@@ -612,6 +620,18 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
     close(lock_fd);
     return 1;
   }
+  uint64_t last_heartbeat = boottime_seconds();
+  if (!heartbeat_path.empty() &&
+      (last_heartbeat == 0 ||
+       !atomic_write(heartbeat_path, std::to_string(last_heartbeat) + "\n"))) {
+    cloud.clear();
+    cloud_status = "safe";
+    error = "heartbeat write failed";
+    scene = "SAFE";
+    publish();
+    close(lock_fd);
+    return 1;
+  }
 
   const int signal_fd = signalfd(-1, &signal_mask, SFD_CLOEXEC | SFD_NONBLOCK);
   const int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
@@ -639,62 +659,98 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
   }
 
   bool running = true;
+  bool failed = false;
+  auto fail_closed = [&](const char* message) {
+    cloud.clear();
+    cloud_status = "safe";
+    error = message;
+    scene = "SAFE";
+    failed = true;
+    running = false;
+    publish();
+  };
   while (running) {
     epoll_event events[kMaxEvents] {};
     const int count = epoll_wait(epoll_fd, events, kMaxEvents, -1);
     if (count < 0 && errno == EINTR) continue;
-    if (count < 0) break;
+    if (count < 0) {
+      fail_closed("epoll wait failed");
+      break;
+    }
     for (int index = 0; index < count; ++index) {
+      if ((events[index].events & EPOLLIN) == 0 ||
+          (events[index].events & (EPOLLERR | EPOLLHUP)) != 0) {
+        fail_closed("event source failed");
+        break;
+      }
       if (events[index].data.fd == signal_fd) {
         signalfd_siginfo info {};
-        if (read(signal_fd, &info, sizeof(info)) != static_cast<ssize_t>(sizeof(info))) continue;
+        const ssize_t signal_read = read(signal_fd, &info, sizeof(info));
+        if (signal_read < 0 && errno == EAGAIN) continue;
+        if (signal_read != static_cast<ssize_t>(sizeof(info))) {
+          fail_closed("signalfd read failed");
+          break;
+        }
         if (info.ssi_signo == SIGHUP) {
           reload();
           if (!arm_timer(timer_fd, config.telemetry_interval_s)) {
-            error = "timerfd rearm failed";
-            scene = "SAFE";
-            running = false;
+            fail_closed("timerfd rearm failed");
           }
-          publish();
+          if (running && !publish()) fail_closed("state write failed");
         } else {
           running = false;
         }
       } else if (events[index].data.fd == inotify_fd) {
         char buffer[512];
-        while (read(inotify_fd, buffer, sizeof(buffer)) > 0) {}
+        ssize_t inotify_read = 0;
+        while ((inotify_read = read(inotify_fd, buffer, sizeof(buffer))) > 0) {}
+        if (inotify_read < 0 && errno != EAGAIN) {
+          fail_closed("inotify read failed");
+          break;
+        }
         reload();
         if (!arm_timer(timer_fd, config.telemetry_interval_s)) {
-          error = "timerfd rearm failed";
-          scene = "SAFE";
-          running = false;
+          fail_closed("timerfd rearm failed");
         }
-        publish();
+        if (running && !publish()) fail_closed("state write failed");
       } else if (events[index].data.fd == timer_fd) {
         uint64_t expirations = 0;
         const ssize_t timer_read = read(timer_fd, &expirations, sizeof(expirations));
         if (timer_read < 0 && errno == EAGAIN) continue;
         if (timer_read != static_cast<ssize_t>(sizeof(expirations))) {
-          cloud.clear();
-          cloud_status = "safe";
-          error = "timerfd read failed";
-          scene = "SAFE";
+          fail_closed("timerfd read failed");
+          break;
         } else if (config_valid) {
           valid = cloud.reconcile(config.cloud_control == "block", &cloud_status, &error);
           scene = valid && config.enabled && config.mode != "safe"
                       ? "DAILY"
                       : (valid && cloud_status == "blocked" ? "CLOUD_ONLY" : "SAFE");
         }
-        publish();
+        if (!publish()) {
+          fail_closed("state write failed");
+        } else if (!heartbeat_path.empty()) {
+          const uint64_t now = boottime_seconds();
+          if (now == 0 || now < last_heartbeat ||
+              (now - last_heartbeat >= kHeartbeatIntervalSeconds &&
+               !atomic_write(heartbeat_path, std::to_string(now) + "\n"))) {
+            fail_closed("heartbeat write failed");
+          } else if (now - last_heartbeat >= kHeartbeatIntervalSeconds) {
+            last_heartbeat = now;
+          }
+        }
       }
+      if (!running) break;
     }
   }
 
   cloud.clear();
-  cloud_status = "stopped";
-  scene = "STOPPED";
-  publish();
+  if (!failed) {
+    cloud_status = "stopped";
+    scene = "STOPPED";
+    publish();
+  }
   close_fds({epoll_fd, inotify_fd, timer_fd, signal_fd, lock_fd});
-  return 0;
+  return failed ? 1 : 0;
 }
 
 }  // namespace
@@ -713,19 +769,21 @@ int main(int argc, char** argv) {
   if (argc >= 2 && std::string(argv[1]) == "daemon") {
     std::string config = "/data/adb/dragon-dac/config/dac.conf";
     std::string state = "/data/adb/dragon-dac/state.json";
+    std::string heartbeat;
     bool dry_run = false;
     for (int index = 2; index < argc; ++index) {
       const std::string argument = argv[index];
       if (argument == "--config" && index + 1 < argc) config = argv[++index];
       else if (argument == "--state" && index + 1 < argc) state = argv[++index];
+      else if (argument == "--heartbeat" && index + 1 < argc) heartbeat = argv[++index];
       else if (argument == "--dry-run") dry_run = true;
       else {
         std::cerr << "unknown argument: " << argument << '\n';
         return 2;
       }
     }
-    return run_daemon(config, state, dry_run);
+    return run_daemon(config, state, heartbeat, dry_run);
   }
-  std::cerr << "usage: dragon-dac daemon [--config PATH] [--state PATH] [--dry-run] | status [--state PATH] | --self-test\n";
+  std::cerr << "usage: dragon-dac daemon [--config PATH] [--state PATH] [--heartbeat PATH] [--dry-run] | status [--state PATH] | --self-test\n";
   return 2;
 }

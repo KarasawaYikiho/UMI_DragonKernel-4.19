@@ -35,6 +35,7 @@ Android events / Power HAL / PSI / thermal / frame data
 - 性能策略默认关闭并保持 dry-run；Joyose 远端网络隔离独立启用。
 - 云控隔离只附加到进程独占的既有 cgroup v2 叶节点，不移动任务；BPF link 绑定 daemon FD 生命周期，共享节点、BPF 不可用或校验失败立即进入 SAFE。
 - Recovery 默认不启动；卸载必须解冻全部任务并恢复 DAC 拥有的 knob。
+- 启动 wrapper 等待 Android 启动完成；以 `/dev` 临时心跳低频检查事件循环。daemon 异常时先释放自身资源，30 秒重试，连续三次短时故障后仅对本次开机熔断。
 
 ## Xiaomi 云控
 

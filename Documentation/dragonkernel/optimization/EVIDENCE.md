@@ -149,3 +149,21 @@ Joyose cgroup directories reject final-component symlinks. Membership exclusivit
 The disabled uclamp backend now attempts rollback on destruction. A transient read/write failure retains only records that may still be DAC-owned for retry; dead threads are complete, while externally changed clamps are never overwritten.
 
 `1ad101088173` passed Project contract and DAC module validation for module `0.7.4`; the pinned Actions compiled host and Android arm64 binaries, validated deterministic packaging and produced the independently checked module artifact.
+
+## Boot watchdog and crash-loop fuse
+
+### Problem and current implementation
+
+The root-manager service started the daemon once without waiting for Android readiness. Unexpected event-loop failure could return success, so a dead isolation owner would not restart and a naive external restart loop could thrash during persistent failure.
+
+### Proposed change and expected benefit
+
+Make unexpected event-source, timer, state-publication and heartbeat failures detach owned BPF links and return failure. Start only after Android reports boot completion, monitor a 30-second `/dev` heartbeat without persistent-storage writes, retry failures at 30-second intervals, reset the counter after five minutes of stability, and stop after three short failures for the current boot.
+
+### Risk, compatibility and rollback
+
+Normal `SIGTERM` exits successfully, so uninstall is not restarted. Recovery remains disabled, duplicate daemons are rejected by executable identity and the native lock, and all performance backends remain disabled. Removing the module restores ROM behavior.
+
+### Test plan
+
+Require Project contract plus host/Android arm64 compilation, native self-tests, deterministic packaging and watchdog-token validation in Actions. Device crash injection and boot/uninstall behavior remain in the post-optimization module regression gate.
