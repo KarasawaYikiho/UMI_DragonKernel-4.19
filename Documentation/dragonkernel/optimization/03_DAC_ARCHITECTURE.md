@@ -29,7 +29,7 @@ Android events / Power HAL / PSI / thermal / frame data
 - 时间戳：与同次镜像 Release 相同，时区 `Asia/Shanghai`
 - daemon 不依赖特定 ROOT manager API；安装/启动 wrapper 可识别通用模块环境。
 - 性能策略默认关闭并保持 dry-run；Joyose 远端网络隔离独立启用。
-- 云控隔离只附加到进程独占的既有 cgroup v2 叶节点，不移动任务；共享节点、BPF 不可用或校验失败立即进入 SAFE。
+- 云控隔离只附加到进程独占的既有 cgroup v2 叶节点，不移动任务；BPF link 绑定 daemon FD 生命周期，共享节点、BPF 不可用或校验失败立即进入 SAFE。
 - Recovery 默认不启动；卸载必须解冻全部任务并恢复 DAC 拥有的 knob。
 
 ## Xiaomi 云控

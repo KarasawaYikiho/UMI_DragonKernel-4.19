@@ -247,7 +247,7 @@ for token in (
     "BPF_PROG_TYPE_CGROUP_SKB",
     "BPF_CGROUP_INET_INGRESS",
     "BPF_CGROUP_INET_EGRESS",
-    "BPF_PROG_DETACH",
+    "BPF_LINK_CREATE",
     "cgroup_is_joyose_only",
 ):
     if token not in dac_source:

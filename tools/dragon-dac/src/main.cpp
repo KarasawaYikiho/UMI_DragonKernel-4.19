@@ -41,9 +41,8 @@ struct Config {
 };
 
 struct CloudAttachment {
-  int cgroup_fd = -1;
-  int ingress_fd = -1;
-  int egress_fd = -1;
+  int ingress_link_fd = -1;
+  int egress_link_fd = -1;
 };
 
 std::string trim(std::string value) {
@@ -256,25 +255,15 @@ int load_drop_program(enum bpf_attach_type attach_type, std::string* error) {
   return descriptor;
 }
 
-bool attach_program(int cgroup_fd, int program_fd, enum bpf_attach_type attach_type,
-                    std::string* error) {
+int create_link(int cgroup_fd, int program_fd, enum bpf_attach_type attach_type,
+                std::string* error) {
   union bpf_attr attributes {};
-  attributes.target_fd = cgroup_fd;
-  attributes.attach_bpf_fd = program_fd;
-  attributes.attach_type = attach_type;
-  attributes.attach_flags = BPF_F_ALLOW_MULTI;
-  if (bpf_call(BPF_PROG_ATTACH, &attributes) == 0) return true;
-  *error = "cgroup BPF attach failed: " + std::string(std::strerror(errno));
-  return false;
-}
-
-void detach_program(int cgroup_fd, int program_fd, enum bpf_attach_type attach_type) {
-  if (cgroup_fd < 0 || program_fd < 0) return;
-  union bpf_attr attributes {};
-  attributes.target_fd = cgroup_fd;
-  attributes.attach_bpf_fd = program_fd;
-  attributes.attach_type = attach_type;
-  bpf_call(BPF_PROG_DETACH, &attributes);
+  attributes.link_create.target_fd = cgroup_fd;
+  attributes.link_create.prog_fd = program_fd;
+  attributes.link_create.attach_type = attach_type;
+  const int descriptor = bpf_call(BPF_LINK_CREATE, &attributes);
+  if (descriptor < 0) *error = "cgroup BPF link failed: " + std::string(std::strerror(errno));
+  return descriptor;
 }
 
 class CloudIsolator {
@@ -318,13 +307,17 @@ class CloudIsolator {
     for (const auto& path : desired) {
       if (attachments_.count(path) != 0) continue;
       CloudAttachment attachment;
-      attachment.cgroup_fd = open(("/sys/fs/cgroup" + path).c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-      if (attachment.cgroup_fd < 0 || !prepare(&attachment, error)) {
+      const int cgroup_fd = open(("/sys/fs/cgroup" + path).c_str(),
+                                 O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+      if (cgroup_fd < 0) *error = "cannot open Joyose cgroup";
+      if (cgroup_fd < 0 || !prepare(cgroup_fd, &attachment, error)) {
+        if (cgroup_fd >= 0) close(cgroup_fd);
         release(&attachment);
         clear();
         *status = "safe";
         return false;
       }
+      close(cgroup_fd);
       attachments_.emplace(path, attachment);
     }
     *status = "blocked";
@@ -343,23 +336,25 @@ class CloudIsolator {
   size_t count() const { return attachments_.size(); }
 
  private:
-  static bool prepare(CloudAttachment* attachment, std::string* error) {
-    attachment->ingress_fd = load_drop_program(BPF_CGROUP_INET_INGRESS, error);
-    if (attachment->ingress_fd < 0 ||
-        !attach_program(attachment->cgroup_fd, attachment->ingress_fd,
-                        BPF_CGROUP_INET_INGRESS, error)) return false;
-    attachment->egress_fd = load_drop_program(BPF_CGROUP_INET_EGRESS, error);
-    if (attachment->egress_fd < 0 ||
-        !attach_program(attachment->cgroup_fd, attachment->egress_fd,
-                        BPF_CGROUP_INET_EGRESS, error)) return false;
+  static bool prepare(int cgroup_fd, CloudAttachment* attachment, std::string* error) {
+    int program_fd = load_drop_program(BPF_CGROUP_INET_INGRESS, error);
+    if (program_fd < 0) return false;
+    attachment->ingress_link_fd = create_link(cgroup_fd, program_fd,
+                                              BPF_CGROUP_INET_INGRESS, error);
+    close(program_fd);
+    if (attachment->ingress_link_fd < 0) return false;
+    program_fd = load_drop_program(BPF_CGROUP_INET_EGRESS, error);
+    if (program_fd < 0) return false;
+    attachment->egress_link_fd = create_link(cgroup_fd, program_fd,
+                                             BPF_CGROUP_INET_EGRESS, error);
+    close(program_fd);
+    if (attachment->egress_link_fd < 0) return false;
     return true;
   }
 
   static void release(CloudAttachment* attachment) {
-    detach_program(attachment->cgroup_fd, attachment->egress_fd, BPF_CGROUP_INET_EGRESS);
-    detach_program(attachment->cgroup_fd, attachment->ingress_fd, BPF_CGROUP_INET_INGRESS);
-    for (const int descriptor : {attachment->egress_fd, attachment->ingress_fd,
-                                 attachment->cgroup_fd}) {
+    for (const int descriptor : {attachment->egress_link_fd,
+                                 attachment->ingress_link_fd}) {
       if (descriptor >= 0) close(descriptor);
     }
     *attachment = CloudAttachment {};
