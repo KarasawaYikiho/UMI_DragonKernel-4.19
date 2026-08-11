@@ -290,7 +290,12 @@ int run_daemon(const std::string& config_path, const std::string& state_path,
         atomic_write(state_path, status_json(scene, config, error, backends));
       } else if (events[index].data.fd == timer_fd) {
         uint64_t expirations = 0;
-        read(timer_fd, &expirations, sizeof(expirations));
+        const ssize_t timer_read = read(timer_fd, &expirations, sizeof(expirations));
+        if (timer_read != static_cast<ssize_t>(sizeof(expirations)) && errno != EAGAIN) {
+          error = "timerfd read failed";
+          scene = "SAFE";
+          atomic_write(state_path, status_json(scene, config, error, backends));
+        }
       }
     }
   }

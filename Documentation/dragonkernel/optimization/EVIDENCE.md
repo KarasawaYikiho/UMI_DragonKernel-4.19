@@ -37,3 +37,5 @@ Remove the optional module. Phase 1 owns no kernel resource and defaults to disa
 ### Test plan
 
 Project contract, Python/module self-tests, YAML and shell syntax, CI host self-test, pinned NDK arm64 build, ELF dependency check, deterministic ZIP comparison, then post-optimization device validation.
+
+The first module CI run rejected an unchecked `timerfd` read under `-Werror`. The follow-up handles short/error reads by entering SAFE and recording the failure; no policy write is attempted.
