@@ -223,6 +223,7 @@ for path in (
     "scripts/dragonkernel/package_dac_module.py",
     "scripts/dragonkernel/validate_dac_module.py",
     "tools/dragon-dac/src/main.cpp",
+    "tools/dragon-dac/src/cpu_backend.h",
     "tools/dragon-dac/src/policy.h",
     "tools/dragon-dac/module/module.prop",
     "tools/dragon-dac/module/config/dac.conf",
@@ -251,6 +252,7 @@ for token in (
     "BPF_LINK_CREATE",
     "cgroup_is_joyose_only",
     "BoostArbiter",
+    "CpuBackend",
 ):
     if token not in dac_source:
         fail("Joyose cgroup BPF isolation contract changed")

@@ -21,4 +21,6 @@
 
 ## 当前实现
 
-`BoostArbiter` 已建立按 owner 的有期 uclamp 请求模型：相同 owner 续期，不同 owner 取最大有效 floor，thermal cap 始终优先，释放只影响自身请求。CPU backend 默认关闭，当前不写 cgroup、uclamp、cpuset、core_ctl 或 boost 节点。
+`BoostArbiter` 已建立按 owner 的有期 uclamp 请求模型：相同 owner 续期，不同 owner 取最大有效 floor，thermal cap 始终优先，释放只影响自身请求。`CpuBackend` 只对明确交给 DAC 的线程使用 `sched_getattr`/`sched_setattr`，写前保存、写后验证、外部 owner 改写时拒绝覆盖，并可恢复原始 clamp。
+
+CPU backend 默认关闭且尚未接入事件路径；当前 daemon 不写 cgroup、uclamp、cpuset、core_ctl 或 boost 节点。Hyper3/Lineage 既有 Power HAL 与 task profile 继续持有组级策略。

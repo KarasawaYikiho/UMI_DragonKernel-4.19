@@ -62,12 +62,14 @@ The kernel retains WALT, SchedTune, uclamp, schedutil, scheduler boost, CPU boos
 
 ### Proposed change and benefit
 
-Add a no-write `BoostArbiter` with per-owner deadlines, maximum effective uclamp floor and a higher-priority thermal cap. Keep the CPU backend disabled while the arbiter and parser contracts are built.
+Add a `BoostArbiter` with per-owner deadlines, maximum effective uclamp floor and a higher-priority thermal cap. Add a disabled per-thread uclamp backend that snapshots, verifies and conditionally restores only explicitly transferred thread ownership; do not write existing ROM cgroup policy.
 
 ### Risk, compatibility and rollback
 
-The arbiter currently owns no kernel resource and contains no CPU masks, frequencies or package policy. Removing the optional module removes the userspace policy layer; all five devices retain vendor behavior.
+The live daemon currently owns no CPU resource and contains no CPU masks, frequencies or package policy. Removing the optional module removes the userspace policy layer; all five devices retain vendor behavior.
 
 ### Test plan
 
-Exercise overlapping acquire/release, expiry, thermal cap and invalid bounds in the native self-test, then require host and Android arm64 Actions plus module-content validation.
+Exercise overlapping acquire/release, expiry, thermal cap and invalid bounds in the native self-test, then require host and Android arm64 Actions plus module-content validation. Backend writes remain a post-optimization device gate.
+
+`3ac075e49702` passed Project contract and DAC module validation for the ownership arbiter and module `0.3.0` artifact.

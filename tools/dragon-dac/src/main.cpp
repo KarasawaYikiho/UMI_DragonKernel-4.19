@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "cpu_backend.h"
 #include "policy.h"
 
 namespace {
@@ -437,6 +438,9 @@ int run_self_test() {
   arbiter.set_thermal_cap(64);
   if (arbiter.effective(10) != 64 || arbiter.effective(20) != 0 ||
       arbiter.active() != 0 || arbiter.acquire(dragon::BoostOwner::kTouch, 1025, 1)) return 1;
+  if (!dragon::CpuBackend::valid_bounds(0, 1024) ||
+      dragon::CpuBackend::valid_bounds(513, 512) ||
+      dragon::CpuBackend::valid_bounds(0, 1025)) return 1;
   return 0;
 }
 
