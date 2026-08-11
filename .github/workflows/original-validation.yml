@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/original-validation.yml"
+      - ".github/workflows/magisk-validation.yml"
       - "arch/**"
       - "block/**"
       - "certs/**"
@@ -24,6 +25,8 @@ on:
       - "scripts/dragonkernel/bootstrap_wsl.sh"
       - "scripts/dragonkernel/build_kernel.sh"
       - "scripts/dragonkernel/build_original.sh"
+      - "scripts/dragonkernel/package_anykernel.py"
+      - "scripts/dragonkernel/release_name.py"
       - "scripts/dragonkernel/prepare_bbg.sh"
       - "scripts/dragonkernel/prepare_toolchain.sh"
       - "Documentation/dragonkernel/baseline.json"

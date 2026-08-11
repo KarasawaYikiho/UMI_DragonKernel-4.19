@@ -546,6 +546,7 @@ for workflow in variant_workflows:
 action_locks = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
     "actions/cache": "caa296126883cff596d87d8935842f9db880ef25",
+    "actions/download-artifact": "634f93cb2916e3fdff6788551b99b062d0335ce0",
     "actions/upload-artifact": {
         "b7c566a772e6b6bfb58ed0dc250532a479d7789f",
         "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
@@ -581,6 +582,33 @@ for forbidden in (
 package_source = indexed_text("scripts/dragonkernel/package_anykernel.py")
 if '"bbg":' in package_source:
     fail("BBG must not be an AnyKernel variant")
+for token in ('"magisk": "CONFIG_DRAGONKERNEL_ROOT_NONE=y"', '"magisk": "Magisk"'):
+    if token not in package_source:
+        fail("Magisk package must reuse the Root-none Original Image")
+
+magisk_workflow_source = indexed_text(".github/workflows/magisk-validation.yml")
+for token in (
+    'workflows: ["Original validation build"]',
+    "github.event.workflow_run.head_sha",
+    "github.event.workflow_run.id",
+    "original-${{ matrix.device }}-${{ env.SOURCE_SHA }}",
+    "scripts/dragonkernel/package_anykernel.py",
+    '"${{ matrix.device }}" magisk',
+    "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
+):
+    if token not in magisk_workflow_source:
+        fail("Magisk workflow no longer consumes same-SHA Original artifacts")
+for forbidden in ("build_kernel.sh", "build_original.sh", "prepare_susfs.sh", "prepare_sukisu.sh"):
+    if forbidden in magisk_workflow_source:
+        fail("Magisk workflow must not compile or prepare an in-kernel Root variant")
+original_workflow_source = indexed_text(".github/workflows/original-validation.yml")
+for token in (
+    '".github/workflows/magisk-validation.yml"',
+    '"scripts/dragonkernel/package_anykernel.py"',
+    '"scripts/dragonkernel/release_name.py"',
+):
+    if token not in original_workflow_source:
+        fail("Original workflow must regenerate artifacts after Magisk packaging changes")
 if (ROOT / "scripts/dragonkernel/build_bbg.sh").exists():
     fail("BBG must not have a variant build wrapper")
 if "scripts/dragonkernel/build_bbg.sh" in indexed_text(

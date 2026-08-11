@@ -1,26 +1,7 @@
 # CPU 策略
 
-优先级：cpuset → uclamp → SchedTune compatibility → bounded core_ctl → schedutil exposed parameters → 最后才考虑小型内核补丁。
+`BoostArbiter` 按 owner 保存短时请求，取有效最高 floor，并由 thermal cap 统一收紧。释放一个 owner 不得清除其他 owner 的请求。
 
-## 当前约束
+每线程 uclamp 后端只接受明确移交的线程：写入前快照，写后回读，释放时仅在值仍由 DAC 所有时恢复。线程退出视为完成，外部 owner 改值时禁止覆盖；瞬时恢复失败保留记录重试。
 
-- 保留 WALT；现有 uclamp 已参与 WALT/schedutil frequency util。
-- BoostArbiter 合并 vendor input、交互、启动、游戏加载、frame rescue 与 thermal override。
-- topology/capacity、policy 和 core_ctl cluster 均运行时读取。
-- Joyose、Power HAL、msm_performance 或 ROM task profile 持有的 knob 在明确交接前只记录不覆盖。
-
-## 实施顺序
-
-1. 采集 owner、boost duration/tail、prime residency、core_ctl false activation。
-2. DAC dry-run 重放交互、启动、桌面和超级岛事件。
-3. 仅接管可完整恢复的 uclamp/cpuset 请求。
-4. 去除重复 boost，再评估 core_ctl 与 schedutil 小步调整。
-5. 任何改动跑桌面、超级岛、启动、切换、下载、视频、相机、游戏和 screen-off 回归。
-
-禁止新增 governor、固定长全核 boost、全前台绑 prime、按应用名修改 scheduler 或修改 OPP/电压。
-
-## 当前实现
-
-`BoostArbiter` 已建立按 owner 的有期 uclamp 请求模型：相同 owner 续期，不同 owner 取最大有效 floor，thermal cap 始终优先，释放只影响自身请求。`CpuBackend` 只对明确交给 DAC 的线程使用 `sched_getattr`/`sched_setattr`，写前保存、写后验证、外部 owner 改写时拒绝覆盖，并可恢复原始 clamp。
-
-CPU backend 默认关闭且尚未接入事件路径；当前 daemon 不写 cgroup、uclamp、cpuset、core_ctl 或 boost 节点。Hyper3/Lineage 既有 Power HAL 与 task profile 继续持有组级策略。
+禁止修改全局 WALT 窗口、固定频率、CPU mask 或现有 ROM task-profile cgroup。CPU 写入仍为设备阶段后的独立开关。

@@ -1,33 +1,18 @@
 # 构建证据
 
-最近有效父提交：`dde65a6886793fe6e2758f7756d484373cef7755`。本轮未执行本地内核编译。
+本地未编译内核。验证优先使用 GitHub Actions 与下载 Artifact。
 
-## GitHub Actions
+## 已确认
 
-| 工作流 | Run | 结果 |
-|---|---:|---|
-| Project contract | `31473698739` | 通过 |
-| Original 五机型 | `31473698766` | 5/5 |
-| KernelSU 五机型 | `31473698758` | 5/5 |
-| SukiSU 五机型 | `31473698737` | 5/5 |
-| 旧 BBG 组合 | `31473698735` | 作废：错误依赖 KernelSU/SUSFS，不计入 BBG 证据 |
-| Fast Original/cmi | `31468350136` | 通过 |
-| Fast Original/umi | `31469006252` | 通过 |
-| Fast Original/umi，同 SHA 重复 | `31470315829` | 通过 |
-| Fast Original/cas | `31470217678` | 通过 |
-| Fast Original/thyme | `31471684131` | 通过 |
-| Fast Original/apollo | `31471686271` | 通过 |
+- 内核输入 `11067a49997e`：Original、KernelSU、SukiSU、独立 Root-none BBG 共 20/20 五机型任务通过。
+- Original/umi：同 SHA 的 Image 与候选 ZIP 可复现。
+- 五机型：对应 `Hyper3` 或 `Lineage_**Latest**` boot 结构配对通过。
+- DAC `0.8.0`：Actions 编译、确定性打包、独立 ZIP 校验与下载复核通过。
+- 当前安全修复 `c87b3a7694df`：Project contract、DAC `0.8.1` 与 Original/KernelSU/SukiSU/BBG 五机型矩阵 20/20 通过。
+- Magisk 公共路径已补为同 SHA Original Artifact 转包；它不执行第二次内核编译，Actions 证据待跑。
 
-## 下载产物复核
+## 待完成
 
-- Original/cmi、Fast Original/umi、cmi、cas：内部 21/21 摘要、候选 ZIP 摘要、设备/Root-none/UCLAMP/schedutil/thermal 配置、ARM64 Image、当前 release/SHA 和设备充电驱动对象通过。
-- `umi`、`cmi`、`cas`：分别使用对应 `Hyper3` 模板完成重打包、AVB/尺寸和内核回读检查。
-- `thyme`、`apollo`：各自的新 `Lineage_**Latest**` 包与镜像目录 boot 一致；两项 Artifact 均通过 21/21 摘要、配置、候选包和对象日志复核，并完成结构配对。
-- Original/umi 两次同 SHA 构建完全一致：Image `b4e24162b499aef5973025cde364d6eb173f38c90fd01b3967f20a4ea6236ca0`；候选 ZIP `5d4648bee33fa3a8d3fbc9cff4b2a2acf413dc90375bcdc5af831e0a444c8e71`。
-- 下载临时目录已删除；仅保留被 Git 忽略的本地私有结构验证输出。
+BBG 启动链补丁改变公共内核输入，因此此前内核 Artifact 仅作历史证据。当前安全修复 SHA 的矩阵已重跑；仍需 Magisk 同 SHA 转包、代表 Artifact 内容复核、ROM 结构配对和精确 SHA 可复现检查。
 
-公共 Baseband-guard 修正后的最终 SHA 必须重新通过 Project contract、Original/KernelSU/SukiSU 三个变体矩阵、独立 BBG 功能矩阵、五机型快速 Original、同 SHA 复现及全部 ROM 结构门禁。
-
-## 尚未证明
-
-启动、硬件兼容、调度收益、桌面/澎湃超级岛表现、温控、功耗、扩容学习、Root 隐藏、BBG、Recovery 刷写、长期稳定性和 Release 均等待优化冻结后的实机证据。
+这些结果仍不证明启动、硬件兼容、性能、温控、功耗、电池学习、Root 隐藏、BBG 实机保护、刷写或长期稳定。

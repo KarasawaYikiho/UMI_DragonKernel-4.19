@@ -1,44 +1,14 @@
-# DAC 架构
+# Dragon Adaptive Controller
 
-Dragon Adaptive Controller 是可选的事件驱动用户态策略层。内核保留 WALT、schedutil、SchedTune、uclamp、core_ctl、KGSL、devfreq、freezer 与 thermal mechanism；DAC 只统一 policy ownership。
+DAC 是可选的 Root 管理器可刷模块，不是内核变体。内核提供机制；DAC 负责事件、所有权、仲裁、回滚和 Joyose 远程云控隔离。
 
-```text
-Android events / Power HAL / PSI / thermal / frame data
-                         |
-                    event loop
-                         |
- scene state -> policy -> ownership/arbiter -> probed backend
-                         |
-  uclamp/cpuset/core_ctl/KGSL/devfreq/freezer (thermal只读)
-```
+## 约束
 
-## 必备契约
+- 默认禁用性能写入并启用 dry-run。
+- 只操作已探测、已移交且可回读的资源。
+- thermal/BCL/LMH 优先于任何性能请求。
+- Joyose 必须同时匹配 Android system app ID、精确 cmdline 与独占 cgroup；不阻断共享 UID。
+- cgroup BPF link 与守护进程生命周期绑定；异常退出自动释放。
+- `/dev` 心跳、30 秒监督、90 秒超时和每次启动三次短失败熔断防止假活与重启风暴。
 
-- 原生 daemon + 小型 CLI；shell 只负责模块安装与启动。
-- `epoll`/uevent/inotify/PSI trigger/timerfd；生产 telemetry 仅低频摘要。
-- 每个 backend 实现 probe/read/apply/verify/restore/supported。
-- dry-run、safe mode、kill switch、原子切换、失败回滚、控制权数据库。
-- 不硬编码 CPU mask、sysfs 路径、频率、温度阈值或内核包名。
-- critical thermal、kernel safety、system critical semantics 始终高于用户 profile。
-
-## 场景选择
-
-事件源先汇总为一次原子快照，再由单一选择器按 `SAFE → THERMAL_EMERGENCY → BOOT → SCREEN_OFF → GAME_THERMAL → GAME_LOADING/FRAME_RESCUE/GAME → CAMERA → APP_LAUNCH/APP_SWITCH/SCROLL/INTERACTIVE → VIDEO/AUDIO → SCREEN_ON_IDLE/DAILY` 决定当前场景。充电与省电模式作为正交标志保留，避免覆盖游戏、媒体或交互语义；只有没有活动场景时才使用对应枚举。选择器不读取包名、不写资源；输入无效直接进入 SAFE。
-
-## 统一模块
-
-不能安全纳入内核的 DAC、诊断、Joyose 云控隔离和配置放入一个标准 ROOT 管理器模块；Magisk、KernelSU、SukiSU 使用同一 ZIP。模块不是内核变体，也不改变 Original 内核机制。
-
-- 文件名：`UMI_<yyyyMMddHHmm>_DAC_Module_Build.zip`
-- 时间戳：与同次镜像 Release 相同，时区 `Asia/Shanghai`
-- daemon 不依赖特定 ROOT manager API；安装/启动 wrapper 可识别通用模块环境。
-- 性能策略默认关闭并保持 dry-run；Joyose 远端网络隔离独立启用。
-- 云控隔离只附加到进程独占的既有 cgroup v2 叶节点，不移动任务；BPF link 绑定 daemon FD 生命周期，共享节点、BPF 不可用或校验失败立即进入 SAFE。
-- Recovery 默认不启动；卸载必须解冻全部任务并恢复 DAC 拥有的 knob。
-- 启动 wrapper 等待 Android 启动完成；以 `/dev` 临时心跳低频检查事件循环。daemon 异常时先释放自身资源，30 秒重试，连续三次短时故障后仅对本次开机熔断。
-
-## Xiaomi 云控
-
-静态 ROM 证据确认 Joyose 同时包含远端下发以及调度、游戏/性能、温控和内存策略，并使用共享系统 UID；默认进程还混合远端与本地职责。因此禁止按 UID 断网、删包、停组件或猜测域名。
-
-DAC 扫描 Joyose 进程的既有 cgroup v2 路径，仅在 `cgroup.procs` 全部属于 Joyose 时附加 ingress/egress cgroup BPF 丢包程序。卸载、切换 observe 或失败时只卸载自身程序；Lineage 无该包时无操作。本地 Binder、Unix socket 与策略代码保留，后续写入仍需 DAC 所有权仲裁。
+当前版本 `0.8.1`。CPU/freezer/game/thermal 写后端保持禁用，直到设备证据证明 owner、接口、回读和回滚路径。

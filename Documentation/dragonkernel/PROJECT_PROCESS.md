@@ -1,42 +1,33 @@
 # 执行流程
 
-## O：优化完成门禁
+## O：优化冻结
 
-1. 冻结调度：WALT、schedutil、UCLAMP、Binder、boost、迁移、RT 饥饿和温控降频交互。
-2. 冻结内存与 I/O：PSI、回收、zram、BFQ/WBT、F2FS、写回和前后台压力。
-3. 冻结温控与充电：删除 `thermal_message` 后，确认 thermal zone、TSENS、BCL、LMH、冷却设备和硬件保护完整；禁止抬高或绕过安全限制。
-4. 冻结用户态策略：审计 Joyose、Power HAL、task profile 与 `msm_performance` 的调度所有权；统一模块隔离远程云控、保留必要本地兼容并由 DAC 仲裁写入。
-5. 冻结电池解容：启动容量按机型；仅保留自动学习到的高容量；手动写入仍受原厂值限制；电气、认证和温度保护不变。
-6. 冻结 ROM 结构：`Hyper3` 覆盖 `umi`/`cmi`/`cas`；`Lineage_**Latest**` 覆盖 `thyme`/`apollo`；包与镜像目录必须解析为同一 boot。
-7. 冻结防格机：Baseband-guard 是所有 Original/Root 变体共享的 LSM 功能，不得成为变体或依赖 KernelSU/SUSFS；另跑五机型功能矩阵。
-8. 冻结构建：优先 GitHub Actions 和下载 Artifact；每次源码改动通过 Project contract、受影响快速任务、完整五机型矩阵、产物复核和同 SHA 复现。
-9. 清理非必要缓存，仅保留 `main`、干净工作树、必要文档和可复用构建缓存。
+1. 冻结调度、内存/I/O、温控、充电、电池学习、Joyose/DAC 所有权与 ROM 结构。
+2. Baseband-guard 保持所有变体共享、Root 无关；启动链与基带关键分区默认拒绝 Root 脚本写入。
+3. 用 Actions 完成 Project、DAC、四组五机型内核矩阵、五机型 Magisk 同 SHA 转包、Artifact 内容、ROM 配对与精确 SHA 可复现验证。
+4. 清理非必要缓存，只保留 `main` 和干净工作树。
 
-Gate O 未全部通过时，禁止刷写、启动、跑分、电池学习或其他实机验证。
+Gate O 完成前禁止刷写、启动、跑分、电池学习或其他实机验证。
 
 ## D：实机验证
 
-1. 最终 Original 先验证安全启动、回滚和五机型硬件矩阵。
-2. 固定设备、ROM、温度、电量和负载，执行系统桌面与澎湃超级岛 A/B。内核禁止按包名或进程名添加特判。
-3. 验证启动容量、扩容学习/FCC、持久化、充放电和全部保护。
-4. Original 通过后依次验证 KernelSU、SukiSU、Magisk 的 Root、管理器/注入和应用检测隐藏。
-5. 在 Original、Magisk、KernelSU、SukiSU 路径分别验证 Baseband-guard 拒绝非授权关键分区写入，同时不阻断正常更新和 Recovery/Fastboot 恢复。
-6. 验证候选 ZIP、Recovery/Fastboot 刷写与回滚。
+1. 最终 Original：启动、回滚、硬件、充电、待机和重启。
+2. 固定设备、ROM、温度、电量和负载，执行系统桌面与澎湃超级岛 A/B；内核不得添加软件名称特判。
+3. 验证模型启动容量、扩展 FCC 学习、持久化与全部电气/认证/温度保护。
+4. 依次验证 KernelSU、SukiSU、Magisk 的 Root、管理器/注入和应用检测隐藏。
+5. 在四条变体路径复核 BBG 写保护、正常更新及 Recovery/Fastboot 恢复。
 
-任何功能、性能、温度、功耗或稳定性回退都返回 O 阶段。
+任何关键回退都返回 O 阶段，并使旧 SHA 证据失效。
 
 ## S：安全与冲突审查
 
-全部实机门禁通过后，按[安全与冲突审查](optimization/09_RELEASE_REVIEW.md)对最终 SHA 执行仓库全量安全扫描、候选差异扫描、供应链复核和跨 owner/变体/ROM 冲突矩阵。Critical/High 未清零、Medium 未逐项处置、回滚不完整或证据不绑定最终 SHA 时禁止发布。
+冻结最终 SHA 后运行全仓多轮安全扫描、最终差异扫描、供应链复核、跨 owner/变体/ROM 冲突矩阵和 Release preflight。Critical/High 必须清零；Medium 必须逐项修复或有明确接受记录。
 
 ## R：发布
 
-实机及 S 门禁全部通过后，CI 从干净提交重新构建、打包、哈希并发布：
+仅 CI 从干净最终 SHA 重建、打包、哈希并发布：
 
-- 时区：`Asia/Shanghai`
-- Tag：`UMI_<yyyyMMddHHmm>_<Variant>`
-- Asset：`UMI_<yyyyMMddHHmm>_<Variant>_Build.zip`
-- Module：`UMI_<yyyyMMddHHmm>_DAC_Module_Build.zip`，与镜像使用同一时间戳
+- Tag：`UMI_<yyyyMMddHHmm>_<Variant>`，时区 `Asia/Shanghai`
+- Image：`UMI_<yyyyMMddHHmm>_<Variant>_Build.zip`
+- Module：`UMI_<yyyyMMddHHmm>_DAC_Module_Build.zip`
 - Variant：`Original`、`Magisk`、`KernelSU`、`SukiSU_KPM_SUSFS`
-
-构建或结构验证通过不能替代实机证据。

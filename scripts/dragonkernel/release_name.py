@@ -36,6 +36,10 @@ if __name__ == "__main__":
             "UMI_202608052353_KernelSU",
             "UMI_202608052353_KernelSU_Build",
         )
+        assert release_names("magisk", "202608052353") == (
+            "UMI_202608052353_Magisk",
+            "UMI_202608052353_Magisk_Build",
+        )
         assert module_asset_name("202608052353") == "UMI_202608052353_DAC_Module_Build.zip"
     elif len(sys.argv) in (2, 3) and sys.argv[1] == "--module":
         print(f"module_asset={module_asset_name(sys.argv[2] if len(sys.argv) == 3 else None)}")

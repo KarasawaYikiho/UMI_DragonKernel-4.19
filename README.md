@@ -1,37 +1,48 @@
 # UMI DragonKernel 4.19
 
-面向小米 SM8250 设备的 Linux 4.19 内核。主线基于 LineageOS SM8250；小米代码仅按子系统审查后移植。
+面向 Xiaomi SM8250 设备的 Linux 4.19 内核。基线来自 LineageOS；Xiaomi 代码仅按子系统审查后移植。
 
-## 范围
+## 功能
 
-- 设备：`umi`、`cmi`、`cas`、`thyme`、`apollo`
-- 系统参考：`umi`/`cmi`/`cas` 使用 `Hyper3`；`thyme`/`apollo` 使用 `Lineage_**Latest**`
-- `Lineage_**Latest**` 包与对应镜像目录必须指向同一 boot 模板；`thyme` 与 `apollo` 各保留一个档案
-- 变体：Original、Magisk、KernelSU + SUSFS、SukiSU + KPM + SUSFS
+1. WALT、schedutil、UCLAMP、Binder 优先级与 boost 所有权修正。
+2. 保留 thermal zone、TSENS、BCL、LMH、冷却设备及硬件保护，移除 Xiaomi `thermal_message` 云控邮箱。
+3. 可选 Dragon Adaptive Controller 模块隔离 Joyose 调度、游戏、温控和内存远程云控；保留本地系统功能。
+4. 电池解容仅保留自动学习到的扩展 FCC；启动容量按型号确定，手动写入仍受原厂容量限制。
+5. Baseband-guard 作为全部变体共享的防格机 LSM，独立于 Root 路径。
+6. 五机型 Actions 矩阵、ccache、可复现 Image/AnyKernel3 包及 ROM 结构校验；Magisk 包复用同 SHA Original Image，不单独编译内核。
 
-## 已实现
+## 兼容范围
 
-- WALT、schedutil、UCLAMP、Binder 优先级、输入 boost 与全局 boost 的机制级调度修正
-- 删除 Xiaomi `thermal_message` 用户态云控邮箱；保留 thermal zone、TSENS、BCL、LMH、冷却设备和硬件保护
-- Joyose 调度、游戏/性能、温控和内存云控由统一模块隔离；共享 UID、停包、停组件和猜测域名方案均被排除
-- Baseband-guard 作为所有变体共享的防格机 LSM；它不是 Root 变体，并有独立功能矩阵
-- 电池解容只保留自动学习到的高于原厂容量；启动容量按机型确定，手动写入仍受原厂值限制，电压、电流、认证和温度保护不变
-- GitHub Actions 五机型矩阵、单设备快速构建、ccache、可复现 Image/AnyKernel3 候选包
-- ROM boot 直接提取及 OTA payload 的单分区提取；本地完成设备专属重打包、AVB/尺寸与内核回读检查
+| 设备 | ROM 参考 |
+|---|---|
+| `umi`、`cmi`、`cas` | `Hyper3` |
+| `thyme`、`apollo` | `Lineage_**Latest**` |
 
-## 当前证据
+ROM 参考仅用于对应设备，不得跨型号复用。内核变体只有 `Original`、`Magisk`、`KernelSU`、`SukiSU_KPM_SUSFS`。
 
-源代码快照 `08f410eb5242` 的 Project contract、Original、KernelSU、SukiSU 与独立 BBG 公共功能矩阵通过，共 20/20。旧 BBG 组合证据因错误依赖 KernelSU/SUSFS 已作废。Original/umi 的既有同 SHA 复现和五机型 ROM 结构配对仍须随最终 Image 重跑。
+## 使用
 
-这些结果只证明源码、构建产物和 ROM 结构门禁有效，不代表已启动、兼容、稳定或可发布。调度、温控、电池、ROM 结构和快速构建全部冻结后才进入实机验证；正式发布前还必须通过最终 SHA 的安全与冲突审查。
+正式产物仅由 GitHub Actions 在冻结 SHA 上重建、校验和发布。刷写前必须使用与设备和 ROM 匹配的候选包；结构检查通过不代表已启动、兼容、稳定或可发布。
+
+Magisk Action 只把同一提交、同一机型的 Original Image 打包为 Magisk 候选包。最终 boot 必须由目标设备使用自身 ROM 经 Magisk 修补后配对，禁止跨机型复用。
+
+本地构建仅用于必要验证，优先下载 Actions Artifact。实机验证必须等调度、温控、电池、ROM 结构和构建路径优化全部冻结后开始。
+
+## 安全
+
+正式 Release 必须通过最终 SHA 的全仓安全扫描、最终差异扫描、供应链审查、跨 owner/变体/ROM 冲突检查及实机回归。未解决的 Critical/High、未处置的 Medium、证据跨 SHA 或回滚不完整均阻止发布。
+
+安全问题请通过 GitHub Security Advisory 私下报告，不要在公开 Issue 中披露利用细节或私有 ROM 信息。
 
 ## 文档
 
-- [执行流程](Documentation/dragonkernel/PROJECT_PROCESS.md)
+- [设备与 ROM](Documentation/dragonkernel/DEVICE_BASELINE.md)
 - [功能状态](Documentation/dragonkernel/FEATURE_MATRIX.md)
-- [设备与 ROM 门禁](Documentation/dragonkernel/DEVICE_BASELINE.md)
+- [执行流程](Documentation/dragonkernel/PROJECT_PROCESS.md)
 - [构建证据](Documentation/dragonkernel/LOCAL_BUILD_VALIDATION.md)
-- [私有输入规则](Documentation/dragonkernel/PRIVATE_INPUTS.md)
-- [机器可读基线](Documentation/dragonkernel/baseline.json)
-- [优化审计与验证](Documentation/dragonkernel/optimization/00_REPO_AUDIT.md)
-- [Release 安全与冲突审查](Documentation/dragonkernel/optimization/09_RELEASE_REVIEW.md)
+- [优化与验证](Documentation/dragonkernel/optimization/00_REPO_AUDIT.md)
+- [发布审查](Documentation/dragonkernel/optimization/09_RELEASE_REVIEW.md)
+
+## 许可证与致谢
+
+各文件沿用其原许可证。感谢 Linux、LineageOS、KernelSU、SukiSU、SUSFS、Magisk、AnyKernel3 与 Baseband-guard 项目贡献者。

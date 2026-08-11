@@ -1,33 +1,16 @@
-# 优化验证
+# 验证门禁
 
-## 静态与 CI
+## 源码与产物
 
-1. Project contract：文档、配置契约、脚本语法、自测、命名与私有信息门禁。
-2. 受影响内核改动：Original、KernelSU、SukiSU 五机型矩阵；Magisk 使用对应 Original Image 与私有模板做结构验证。
-3. BBG：公共 config/object/log 门禁和独立 Root-none 五机型功能矩阵；不得成为变体。
-4. 用户态模块：同一源码构建一次，校验 ZIP 结构、权限、hash、可复现性和三类 ROOT 管理器兼容入口。
-5. 最终提交：五机型 ROM 结构配对、代表产物解包复核、同 SHA Image/候选 ZIP/模块 ZIP 复现。
+1. Project contract 与脚本自检。
+2. DAC host/Android AArch64 编译、确定性 ZIP 和独立内容校验。
+3. Original、KernelSU、SukiSU、独立 BBG 五机型矩阵。
+4. Magisk 五机型候选包必须复用同 SHA Original Artifact，并证明 ZIP 内 Image 完全一致。
+5. 代表 Artifact 的外层/内部 SHA、配置、Image magic、对象和日志检查。
+6. 五机型 ROM boot 结构配对与同 SHA 可复现检查。
 
-## 实机顺序
+## 实机
 
-只有 CPU/调度、freezer、日常功耗、游戏闭环、持续温控、云控隔离、电池、ROM 与构建路径全部冻结后才开始：
+Gate O 后先 Original，再 Root 变体。覆盖启动/回滚、硬件、桌面/超级岛 A/B、温控/充电、电池学习、待机、DAC 云控隔离、Root 隐藏、BBG 和 Recovery/Fastboot。
 
-1. Original 安全启动、回滚、基础硬件与 24 小时混合稳定；
-2. 系统桌面、澎湃超级岛、应用启动/切换、相机、音频、电话、网络、待机 A/B；
-3. freezer/LMKD/Binder 功能矩阵与 100 次 freeze/thaw；
-4. 日常固定条件功耗与 frame P95/P99；
-5. 游戏 20–30 分钟持续帧率、功耗和温控；
-6. 电池型号初始容量、扩容学习、持久化与全部保护；
-7. Magisk、KernelSU、SukiSU 的 ROOT/隐藏/模块安装；
-8. 各路径 BBG 正常更新、关键分区拒写与 Recovery/Fastboot 恢复；
-9. 候选 ZIP 刷写、卸载和回滚。
-
-出现 boot/panic/reboot/ANR/Binder/audio/camera/call/alarm/notification/network/suspend/charging/FPS/P99 回归，立即回滚该单项并返回优化阶段。
-
-## Release 前置审查
-
-实机门禁通过不直接进入发布。最终 SHA 还必须通过[安全与冲突审查](09_RELEASE_REVIEW.md)；修复任何发现后，受影响的静态、CI、产物和实机证据必须重跑。
-
-## 单项 Evidence
-
-每个改变必须记录 Problem、Current implementation、Evidence、Proposed change、Expected benefit、Risk、Compatibility、Rollback、Test plan；没有设备 trace 时不得把理论判断写成性能完成。
+任何源码修复都会使旧 SHA 的构建、结构、安全和实机证据失效。正式结论必须绑定同一最终 SHA。

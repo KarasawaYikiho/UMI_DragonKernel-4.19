@@ -1,0 +1,92 @@
+name: Magisk candidate validation
+
+on:
+  workflow_run:
+    workflows: ["Original validation build"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full source commit SHA
+        required: true
+        type: string
+      original_run_id:
+        description: Successful Original validation run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  package:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.head_branch == 'main')
+    name: magisk-${{ matrix.device }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [umi, cmi, cas, thyme, apollo]
+    env:
+      SOURCE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.source_sha }}
+      ORIGINAL_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.original_run_id }}
+    steps:
+      - name: Validate immutable source reference
+        shell: bash
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$ORIGINAL_RUN_ID" =~ ^[0-9]+$ ]]
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 1
+
+      - name: Download same-SHA Original artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: original-${{ matrix.device }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/original
+          github-token: ${{ github.token }}
+          run-id: ${{ env.ORIGINAL_RUN_ID }}
+
+      - name: Fetch locked flashable template
+        run: scripts/dragonkernel/prepare_anykernel3.sh "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Package and verify Magisk candidate
+        shell: bash
+        run: |
+          artifact="$RUNNER_TEMP/original"
+          output="$RUNNER_TEMP/magisk"
+          mkdir -p "$output"
+          timestamp=$(TZ=Asia/Shanghai date -d "@$(git show -s --format=%ct HEAD)" +%Y%m%d%H%M)
+          asset_base=$(python3 scripts/dragonkernel/release_name.py magisk "$timestamp" | sed -n 's/^asset_base=//p')
+          candidate="$output/${asset_base}-${{ matrix.device }}.zip"
+          python3 scripts/dragonkernel/package_anykernel.py \
+            "${{ matrix.device }}" magisk "$ANYKERNEL3_DIR" "$artifact" "$candidate"
+          unzip -p "$candidate" Image | sha256sum > "$output/candidate-image.sha256"
+          sha256sum "$artifact/arch/arm64/boot/Image" > "$output/original-image.sha256"
+          test "$(cut -d' ' -f1 "$output/candidate-image.sha256")" = \
+            "$(cut -d' ' -f1 "$output/original-image.sha256")"
+          unzip -p "$candidate" anykernel.sh | grep -Fqx \
+            "kernel.string=UMI DragonKernel 4.19 Magisk (${{ matrix.device }})"
+          grep -qx 'CONFIG_DRAGONKERNEL_ROOT_NONE=y' "$artifact/.config"
+          ! grep -Eq '^CONFIG_(KSU|KPM|KSU_SUSFS)=y$' "$artifact/.config"
+          (cd "$output" && sha256sum "$(basename "$candidate")" > "$(basename "$candidate").sha256")
+          printf 'source_sha=%s\noriginal_run_id=%s\n' \
+            "$SOURCE_SHA" "$ORIGINAL_RUN_ID" > "$output/PROVENANCE"
+
+      - name: Upload Magisk validation evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: magisk-${{ matrix.device }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/magisk
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

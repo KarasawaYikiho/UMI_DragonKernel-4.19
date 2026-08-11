@@ -13,11 +13,13 @@ BASELINE = ROOT / "Documentation/dragonkernel/baseline.json"
 DEVICES = ("umi", "cmi", "cas", "thyme", "apollo")
 VARIANT_CONFIG = {
     "original": "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
+    "magisk": "CONFIG_DRAGONKERNEL_ROOT_NONE=y",
     "kernelsu": "CONFIG_DRAGONKERNEL_KERNELSU=y",
     "sukisu": "CONFIG_DRAGONKERNEL_SUKISU=y",
 }
 VARIANT_LABEL = {
     "original": "Original",
+    "magisk": "Magisk",
     "kernelsu": "KernelSU",
     "sukisu": "SukiSU_KPM_SUSFS",
 }
@@ -184,6 +186,11 @@ def self_test() -> None:
                 fail("installer contract changed")
         if modes["anykernel.sh"] != 0o755 or modes["Image"] != 0o644:
             fail("package permissions changed")
+        magisk = root / "magisk.zip"
+        write_package(template, image, "umi", "magisk", magisk)
+        with zipfile.ZipFile(magisk) as archive:
+            if b"DragonKernel 4.19 Magisk (umi)" not in archive.read("anykernel.sh"):
+                fail("Magisk package label changed")
     print("AnyKernel3 packaging contract OK.")
 
 
